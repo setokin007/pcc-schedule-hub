@@ -1,0 +1,2309 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PCC Schedule Hub</title>
+<meta name="description" content="Polynesian Cultural Center schedule of record: hours, show times, transportation and closures.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="hub-shim.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky tab bar over a single working column; day rows read as a run sheet. */
+:root {
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --bg: #f2f6f5;
+  --surface: #ffffff;
+  --surface-2: #e8efee;
+  --text: #1c2526;
+  --muted: #5f6b6c;
+  --line: #d6e0df;
+  --brand: #0f5c63;
+  --brand-ink: #ffffff;
+  --danger: #b42318;
+  --warn-bg: #fff4e0;
+  --warn-line: #f0c27b;
+  --closed-bg: #fdecec;
+  --season: #0f766e;
+  --engagement: #7c3aed;
+  --special: #c2410c;
+  --c-operations: #0f5c63;
+  --c-show: #c2410c;
+  --c-dining: #a16207;
+  --c-activity: #15803d;
+  --c-tour: #6d28d9;
+  --c-other: #475569;
+  --c-1: #0f5c63; --c-2: #c2410c; --c-3: #a16207; --c-4: #15803d; --c-5: #6d28d9; --c-6: #475569; --c-7: #be185d; --c-8: #1d4ed8;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 2px 8px rgb(0 0 0 / 0.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121718;
+    --surface: #1a2122;
+    --surface-2: #222a2b;
+    --text: #e9eeee;
+    --muted: #9aa8a9;
+    --line: #2f3a3b;
+    --brand: #3fb5bd;
+    --brand-ink: #062426;
+    --danger: #f87171;
+    --warn-bg: #3a2e14;
+    --warn-line: #7a5c1e;
+    --closed-bg: #3a1d1d;
+    --season: #2dd4bf;
+    --engagement: #a78bfa;
+    --special: #fb923c;
+    --c-operations: #3fb5bd;
+    --c-show: #fb923c;
+    --c-dining: #facc15;
+    --c-activity: #4ade80;
+    --c-tour: #a78bfa;
+    --c-other: #94a3b8;
+    --c-1: #3fb5bd; --c-2: #fb923c; --c-3: #facc15; --c-4: #4ade80; --c-5: #a78bfa; --c-6: #94a3b8; --c-7: #f472b6; --c-8: #60a5fa;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+    --bg: #121718;
+    --surface: #1a2122;
+    --surface-2: #222a2b;
+    --text: #e9eeee;
+    --muted: #9aa8a9;
+    --line: #2f3a3b;
+    --brand: #3fb5bd;
+    --brand-ink: #062426;
+    --danger: #f87171;
+    --warn-bg: #3a2e14;
+    --warn-line: #7a5c1e;
+    --closed-bg: #3a1d1d;
+    --season: #2dd4bf;
+    --engagement: #a78bfa;
+    --special: #fb923c;
+    --c-operations: #3fb5bd;
+    --c-show: #fb923c;
+    --c-dining: #facc15;
+    --c-activity: #4ade80;
+    --c-tour: #a78bfa;
+    --c-other: #94a3b8;
+    --c-1: #3fb5bd; --c-2: #fb923c; --c-3: #facc15; --c-4: #4ade80; --c-5: #a78bfa; --c-6: #94a3b8; --c-7: #f472b6; --c-8: #60a5fa;
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font-body); }
+h1, h2, h3, .brand b { font-family: var(--font-display); text-wrap: balance; }
+h1 { font-size: 1.5rem; margin: 0 0 .25rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; margin: 0; }
+h3 { margin: 0 0 .25rem; font-size: 1rem; }
+a { color: var(--brand); }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+small { display: block; color: var(--muted); font-size: .8rem; font-weight: 400; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.pad { padding: 2rem; }
+.grow { flex: 1; }
+.nowrap { white-space: nowrap; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+main.wrap { padding-top: 1.25rem; padding-bottom: 4rem; }
+
+/* header */
+.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.top-in { display: flex; align-items: center; gap: 1rem; min-height: 60px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+.brand { display: flex; align-items: center; gap: .6rem; }
+.brand b { font-size: 1rem; }
+.logo { display: block; background: #0f5c63; border: 0; border-radius: 10px; padding: 5px 10px; cursor: pointer; line-height: 0; }
+.logo:hover { background: #0c4c52; }
+.logo img { height: 46px; width: auto; display: block; }
+.brand-txt { border-left: 1px solid var(--line); padding-left: .6rem; }
+@media print { .logo { background: #0f5c63 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; flex: 1; }
+.tabs.sub { margin: .5rem 0 1rem; border-bottom: 1px solid var(--line); }
+.tab { background: none; border: 0; padding: 8px 12px; border-radius: 8px; font: inherit; color: var(--muted); cursor: pointer; font-weight: 500; }
+.tab:hover { background: var(--surface-2); color: var(--text); }
+.tab.on { color: var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }
+.tabs.sub .tab { border-radius: 8px 8px 0 0; }
+.tabs.sub .tab.on { box-shadow: inset 0 -2px 0 var(--brand); background: none; }
+
+/* banners */
+.banner { background: color-mix(in srgb, var(--brand) 10%, var(--bg)); border-bottom: 1px solid var(--line); padding: 10px 0; font-size: .9rem; }
+.banner.warn { background: var(--warn-bg); }
+
+/* buttons & form */
+.btn { display: inline-flex; align-items: center; gap: .35rem; background: var(--brand); color: var(--brand-ink); border: 1px solid var(--brand); border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: var(--surface); color: var(--text); border-color: var(--line); font-weight: 500; }
+.btn.ghost:hover { background: var(--surface-2); filter: none; }
+.btn.small { padding: 4px 10px; font-size: .85rem; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.ghost.danger { background: var(--surface); color: var(--danger); border-color: var(--line); }
+.btnrow { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btnrow.end { justify-content: flex-end; margin-top: 1rem; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+input, select, textarea { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; }
+input[type="checkbox"], input[type="radio"] { width: auto; margin: 0; }
+label { display: block; font-weight: 500; font-size: .9rem; margin-bottom: .75rem; }
+label > input, label > select, label > textarea { margin-top: 4px; }
+fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 .75rem; padding: .5rem .75rem .75rem; }
+legend { font-weight: 500; font-size: .9rem; padding: 0 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+form.inline { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+form.inline label { margin: 0; }
+.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.day { display: inline-flex; align-items: center; gap: 4px; margin: 0; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; font-weight: 500; }
+.day:has(input:checked) { background: color-mix(in srgb, var(--brand) 14%, transparent); border-color: var(--brand); }
+.times { display: grid; gap: 6px; margin-bottom: 8px; }
+.trow { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 6px; align-items: center; }
+.trow .tl, .tr-only { display: none; }
+form[data-transport] .trow { grid-template-columns: 8.5rem 1fr auto; }
+form[data-transport] .trow .to, form[data-transport] .trow [name="te"], form[data-transport] .nt-only { display: none; }
+form[data-transport] .trow .tl { display: block; margin: 0; }
+form[data-transport] .tr-only { display: inline; }
+.stops { display: grid; gap: 3px; }
+.stop { display: flex; gap: .5rem; align-items: baseline; }
+.stop .tchip { margin: 0; min-width: 5.6rem; text-align: center; }
+.trcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .75rem; }
+.trcard { margin: 0; }
+.trcard table td { padding: .4rem .5rem; }
+.trcard table td:first-child { width: 6.5rem; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.trcard .tr-head { display: flex; justify-content: space-between; gap: .5rem; align-items: flex-start; margin-bottom: .4rem; flex-wrap: wrap; }
+table.bystop td, table.bystop th { white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.bystop td:first-child { white-space: normal; min-width: 180px; }
+fieldset.cd:has(input[value="inherit"]:checked) .cd-days { display: none; }
+.chip.t-early { color: var(--special); border-color: color-mix(in srgb, var(--special) 50%, transparent); margin-top: 2px; }
+.card.early { background: var(--warn-bg); border-color: var(--warn-line); }
+.closlist td { vertical-align: middle; }
+.closlist tr.month td { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; background: var(--surface-2); }
+.ctrls { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.ctrls select { width: auto; }
+.ctrls label { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; font: inherit; font-size: .88rem; color: var(--muted); cursor: pointer; font-weight: 500; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand); font-weight: 600; }
+.toolbar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.actblock { border-top: 1px solid var(--line); padding: .6rem .9rem; background: var(--surface); }
+.actblock:first-child { border-top: 0; }
+.actblock.dragging { opacity: .4; }
+.ab-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.grip { touch-action: none; cursor: grab; color: var(--muted); letter-spacing: -2px; user-select: none; font-weight: 700; padding: 0 2px; }
+.ab-ctrl { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.ab-ctrl select { width: auto; padding: 4px 8px; font-size: .85rem; }
+.ab-slots { margin: .4rem 0 0 1.5rem; display: grid; gap: 4px; }
+.ab-slot { display: grid; grid-template-columns: 180px 1fr minmax(0, auto) auto; gap: .5rem; align-items: center; }
+.ab-slot .actions .btn { margin-left: 4px; }
+.ab-none { margin: .3rem 0 0 1.5rem; }
+.dropzone { min-height: 48px; }
+table.tb { table-layout: fixed; min-width: 640px; }
+table.tb td:nth-child(1) { width: 30%; } table.tb td:nth-child(2) { width: 22%; } table.tb td:nth-child(4) { width: 18%; } table.tb td:nth-child(5) { width: 80px; }
+.dropempty { padding: 1rem; text-align: center; color: var(--muted); font-size: .85rem; }
+.dragitem.dragging { opacity: .4; }
+.dragitem.ghosting { position: relative; z-index: 2; box-shadow: 0 6px 20px rgb(0 0 0 / .18); }
+.r-name .grip { margin-right: .35rem; }
+.actrow { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.actrow .grow { min-width: 160px; }
+.actrow .anote { flex: 2 1 200px; color: var(--muted); font-size: .9rem; }
+body.touchdrag { user-select: none; -webkit-user-select: none; }
+.dropmark { height: 3px; background: var(--brand); border-radius: 2px; }
+.catzone.dropover .rows { outline: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent); outline-offset: 2px; }
+.cat .count { color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.crow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.crow input[type="text"], .crow input:not([type]) { flex: 1 1 160px; width: auto; }
+.crow input[type="time"], .crow select { width: auto; }
+.btn:disabled { opacity: .35; cursor: default; filter: none; }
+@media (max-width: 720px) { .ab-slot { grid-template-columns: 1fr; gap: 2px; } .ab-slots, .ab-none { margin-left: 0; } }
+.chip.t-open { color: var(--c-4); border-color: color-mix(in srgb, var(--c-4) 50%, transparent); background: color-mix(in srgb, var(--c-4) 9%, transparent); margin-top: 2px; }
+.card.openday { background: color-mix(in srgb, var(--c-4) 9%, var(--surface)); border-color: color-mix(in srgb, var(--c-4) 40%, var(--line)); }
+.dayacts { margin-top: .5rem; }
+.hours { max-width: 620px; }
+.hours .hcard { padding: 0; overflow: hidden; }
+.hours .hhead { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .9rem 1.1rem .4rem; }
+.hours .hhead h2 { font-size: 1.05rem; }
+.hours .hsub { padding: 0 1.1rem .5rem; color: var(--muted); font-size: .88rem; }
+.hours table td { padding: .5rem 1.1rem; font-variant-numeric: tabular-nums; }
+.hours table td:first-child { width: 45%; }
+.hours tr.today td { font-weight: 700; background: color-mix(in srgb, var(--brand) 6%, transparent); }
+.hours .lbl { display: block; font-size: .82rem; color: var(--muted); }
+.hours .closedtxt { color: var(--danger); font-weight: 600; }
+.hours .rowedit { text-align: right; width: 1%; white-space: nowrap; }
+.wkrow { display: grid; grid-template-columns: 7.5rem auto 1fr auto 1fr; gap: 6px; align-items: center; margin-bottom: 6px; }
+.wkrow input[type=time] { margin: 0; }
+.wkrow:has(input[type=checkbox]:not(:checked)) input[type=time] { opacity: .35; pointer-events: none; }
+@media (max-width: 720px) { .wkrow { grid-template-columns: 1fr 1fr; } .wkrow .to { display: none; } }
+.quick { border-top: 1px dashed var(--line); margin-top: .6rem; padding-top: .6rem; display: grid; gap: 6px; }
+.quick .qrow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.quick .qrow input { width: auto; flex: 1 1 140px; margin: 0; }
+.quick .qrow input[type=number] { flex: 0 1 6.5rem; }
+.quick .qrow input[type=time] { flex: 0 1 8rem; }
+.quick .qhint { font-size: .78rem; color: var(--muted); }
+.quick .qmode { gap: 4px; }
+.quick:has(input[name=qmode][value=list]:checked) [data-m]:not([data-m=list]),
+.quick:has(input[name=qmode][value=span]:checked) [data-m]:not([data-m=span]),
+.quick:has(input[name=qmode][value=rep]:checked) [data-m]:not([data-m=rep]) { display: none; }
+.ctoggle { cursor: pointer; user-select: none; border-radius: 6px; padding: 2px 4px; margin-left: -4px; }
+.ctoggle:hover { background: var(--surface-2); }
+.ctoggle .caret { display: inline-block; width: 1em; transition: transform .15s; color: var(--muted); font-size: .8em; order: -1; }
+.collapsed > .ctoggle .caret, tr.catrow.collapsed .caret { transform: rotate(-90deg); }
+.group.collapsed > :not(h2) { display: none !important; }
+.group.collapsed { margin-bottom: .5rem; }
+.group.collapsed.dropover > h2 { outline: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent); outline-offset: 2px; }
+tr.catrow td.ctoggle { cursor: pointer; }
+.colctl { display: inline-flex; gap: 4px; }
+@media print { .group.collapsed > :not(h2) { display: block !important; } .caret { display: none !important; } }
+.cgrip { touch-action: none; cursor: grab; color: var(--muted); font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 4px; letter-spacing: 0; text-transform: none; }
+.cgrip:hover { background: var(--surface-2); color: var(--text); }
+section.catzone.cdragging { opacity: .45; }
+section.catzone.cdrop-before { box-shadow: 0 -4px 0 -1px var(--brand); }
+section.catzone.cdrop-after { box-shadow: 0 4px 0 -1px var(--brand); }
+.err { color: var(--danger); font-weight: 500; margin: 0 0 .75rem; }
+/* shows per day: numbered Begin/End rows */
+.showsbar { display: flex; gap: .5rem 1rem; flex-wrap: wrap; align-items: center; margin: 0 0 .6rem; padding: .5rem .6rem; background: var(--surface-2); border-radius: 8px; }
+.showsbar label { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+.showsbar input { width: 4.8rem; margin: 0; padding: 5px 8px; }
+.showsbar .muted { font-size: .78rem; flex-basis: 100%; }
+.times { counter-reset: show; }
+.times .trow { counter-increment: show; grid-template-columns: 3.7rem 1fr auto 1fr auto; }
+.times .trow::before { content: "Show " counter(show); font-size: .8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.timehead { display: grid; grid-template-columns: 3.7rem 1fr auto 1fr auto; gap: 6px; font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+.timehead span:nth-child(3) { visibility: hidden; }
+form[data-transport] .times .trow { grid-template-columns: 3.7rem 8.5rem 1fr auto; }
+form[data-transport] .times .trow::before { content: "Stop " counter(show); }
+form[data-transport] .showsbar, form[data-transport] .timehead { display: none; }
+.edtimes { display: grid; gap: 6px; margin-bottom: .75rem; }
+.edtimes .ab-slot { grid-template-columns: 1fr; gap: 2px; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; }
+/* Island Villages: island → presentations / hands-on */
+.kind-head { padding: .3rem 1rem .3rem 1.6rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); background: var(--surface); border-top: 1px solid var(--line); display: flex; align-items: center; gap: .45rem; }
+.kind-head::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cc, var(--muted)); }
+.kind-head .count { font-weight: 500; letter-spacing: 0; text-transform: none; }
+tr.kindrow td { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); padding: .3rem .8rem .3rem 1.6rem; background: var(--surface); }
+.villages { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 500px), 1fr)); gap: 1rem; align-items: start; }
+.village { margin: 0; padding: 0; overflow: hidden; }
+.vhead { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; padding: .8rem 1rem; background: color-mix(in srgb, var(--brand) 7%, var(--surface)); border-bottom: 1px solid var(--line); }
+.vhead h2 { font-size: 1.2rem; }
+.vkind { padding: .7rem 1rem .9rem; }
+.vkind + .vkind { border-top: 1px solid var(--line); }
+.vkhead { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .45rem; }
+.vkhead h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; margin: 0; display: flex; align-items: center; gap: .45rem; }
+.vkhead h3::before { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--cc); }
+.vkhead .count { color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.vlist li { border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem; display: grid; gap: .35rem; min-width: 0; }
+.vtop { display: flex; justify-content: space-between; gap: .5rem; align-items: flex-start; flex-wrap: wrap; }
+.vtop > div:first-child { min-width: 0; }
+.vslot { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
+.vslot .vdays { font-size: .75rem; color: var(--muted); font-weight: 600; margin-right: 4px; white-space: nowrap; }
+.vnone { margin: 0; }
+/* island sub-groups inside a category */
+.isle-head { display: flex; align-items: baseline; gap: .4rem; padding: .5rem 1rem .4rem; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--cc, var(--brand)) 7%, var(--surface)); font-family: var(--font-display); font-weight: 700; font-size: .92rem; color: var(--text); }
+.isle-head:first-child { border-top: 0; }
+.isle-head .count { font-family: var(--font-body); font-weight: 500; font-size: .8rem; color: var(--muted); }
+.reps { display: inline-block; font-size: .75rem; color: var(--muted); margin-left: 2px; white-space: nowrap; }
+tr.islandrow td { font-weight: 700; font-size: .82rem; padding-top: .45rem; padding-bottom: .35rem; background: var(--surface); color: var(--text); }
+tr.islandrow td::before { content: "— "; color: var(--muted); }
+
+/* cards & chips */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; box-shadow: var(--shadow); margin-bottom: 1rem; }
+.card.empty { text-align: center; color: var(--muted); padding: 2rem; }
+.card.closed { background: var(--closed-bg); border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.warnbox { background: var(--warn-bg); border-color: var(--warn-line); }
+.warnbox ul { margin: .25rem 0 0; padding-left: 1.2rem; }
+.pill { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); vertical-align: middle; }
+.pill.edit { background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand); }
+.chip { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.t-base { color: var(--muted); border-color: var(--line); }
+.t-season { --tc: var(--season); }
+.t-engagement { --tc: var(--engagement); }
+.t-special { --tc: var(--special); }
+.chip.t-season, .chip.t-engagement, .chip.t-special { color: var(--tc); border-color: color-mix(in srgb, var(--tc) 45%, transparent); background: color-mix(in srgb, var(--tc) 9%, transparent); }
+.chip.t-closed { color: var(--danger); border-color: var(--danger); margin-top: 2px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tc); margin: 2px 2px 0; vertical-align: middle; }
+.tchip { display: inline-block; font-variant-numeric: tabular-nums; font-weight: 600; background: var(--surface-2); border-radius: 6px; padding: 3px 8px; margin: 2px 4px 2px 0; white-space: nowrap; }
+.tchip.off { background: var(--closed-bg); color: var(--danger); }
+
+/* day view */
+.datenav { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.datenav input { width: auto; }
+.dayhead { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.group { margin-bottom: 1.25rem; }
+.cat { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 .5rem; display: flex; align-items: center; gap: .5rem; }
+.cat::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--cc); }
+.c-operations { --cc: var(--c-operations); } .c-show { --cc: var(--c-show); } .c-dining { --cc: var(--c-dining); }
+.c-activity { --cc: var(--c-activity); } .c-tour { --cc: var(--c-tour); } .c-other { --cc: var(--c-other); }
+.rows { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.row { display: grid; grid-template-columns: minmax(180px, 1.2fr) 2fr minmax(150px, 1fr); gap: .75rem 1rem; padding: .75rem 1rem; border-top: 1px solid var(--line); align-items: center; }
+.row:first-child { border-top: 0; }
+.row.cancelled .r-name b { text-decoration: line-through; color: var(--muted); }
+.r-src { text-align: right; }
+
+/* tables */
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 1rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .6rem .8rem; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font-size: .8rem; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+td.actions { text-align: right; white-space: nowrap; }
+td.actions .btn { margin-left: 4px; }
+table.week { min-width: 860px; font-size: .85rem; }
+table.week th[scope="row"] { font-weight: 600; min-width: 170px; }
+table.week td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.week thead th { text-align: center; }
+table.week thead th:first-child { text-align: left; }
+table.week thead th a { color: var(--text); text-decoration: none; font-weight: 600; }
+table.week thead th.today { box-shadow: inset 0 -3px 0 var(--brand); }
+table.week td.src { background: color-mix(in srgb, var(--tc) 8%, transparent); }
+tr.catrow td { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--cc); font-weight: 700; background: color-mix(in srgb, var(--cc) 6%, var(--surface)); }
+.legend { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+
+/* programs */
+.viewhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.viewhead p { margin: 0; }
+h2.sub { margin: 1.25rem 0 .6rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .75rem; }
+.card.prog { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; text-align: left; font: inherit; color: inherit; cursor: pointer; margin: 0; border-left: 4px solid var(--tc); }
+.card.prog:hover { border-color: var(--tc); }
+.timeline { position: relative; padding: .75rem 1rem 1rem; overflow: hidden; }
+.tl-months { display: grid; grid-template-columns: repeat(12, 1fr); font-size: .72rem; color: var(--muted); margin-bottom: .5rem; }
+.tl-months span { border-left: 1px solid var(--line); padding-left: 4px; }
+.tl-row { position: relative; height: 26px; margin-bottom: 4px; }
+.tl-bar { position: absolute; top: 0; height: 24px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--tc) 22%, var(--surface)); border-left: 3px solid var(--tc); color: var(--text); font: inherit; font-size: .75rem; font-weight: 600; text-align: left; padding: 0 6px; cursor: pointer; overflow: hidden; min-width: 8px; }
+.tl-bar span { white-space: nowrap; }
+.tl-now { position: absolute; top: .5rem; bottom: .5rem; width: 2px; background: var(--danger); opacity: .6; left: calc(1rem + (100% - 2rem) * var(--p) / 100); }
+
+/* dialog */
+dialog { border: 0; border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgb(0 0 0 / .3); }
+dialog::backdrop { background: rgb(10 20 20 / .45); }
+.modal { padding: 1.25rem 1.25rem 1rem; max-height: 85vh; overflow-y: auto; }
+.modal h2 { margin-bottom: 1rem; font-size: 1.15rem; }
+
+.center { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login { width: min(360px, 100%); display: grid; gap: 1rem; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 500; z-index: 100; max-width: calc(100vw - 32px); box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
+.toast.bad { background: var(--danger); color: #fff; }
+
+@media (max-width: 720px) {
+  .row { grid-template-columns: 1fr; gap: .35rem; }
+  .r-src { text-align: left; }
+  .two { grid-template-columns: 1fr; }
+  .top { position: static; }
+  .top-in .tabs { order: 3; flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto; }
+  .tab { white-space: nowrap; }
+  td.actions { white-space: normal; }
+}
+
+@media print {
+  :root { --bg: #fff; --surface: #fff; --text: #000; --muted: #444; --line: #ccc; }
+  .no-print { display: none !important; }
+  .top .tabs, .top .who, .banner { display: none !important; }
+  .top { position: static; border: 0; }
+  body { font-size: 11pt; }
+  main.wrap { padding: 0; max-width: none; }
+  .rows, .card { box-shadow: none; break-inside: avoid; }
+  .row { padding: 6px 10px; }
+}
+
+</style>
+<div id="app"><p class="pad">Loading…</p></div>
+<script type="module">
+// PCC Schedule Hub — claude.ai Artifact build. Data lives in the artifact's
+// shared `db` (doc schedule/main); edit rights come from the share level.
+
+// ---------- constants ----------
+// Default categories; editors can rename, reorder, recolor, add and remove them (doc.categories).
+const DEFAULT_CATEGORIES = [
+  { id: "operations", name: "Operational Hours", color: 1 },
+  { id: "activity", name: "Daytime", color: 4 },
+  { id: "dining", name: "Dining", color: 3 },
+  { id: "show", name: "Evening Show", color: 2 },
+  { id: "special", name: "Special Events", color: 7 },
+];
+// Default time-of-day blocks (doc.timeBlocks); each runs from its start until the next block's start.
+const DEFAULT_TIME_BLOCKS = [
+  { id: "tb-day", name: "Daytime", start: "00:00" },
+  { id: "tb-dinner", name: "Dinner", start: "16:30" },
+  { id: "tb-evening", name: "Evening", start: "19:00" },
+];
+// Island villages (doc.islands): activities with an island are listed under it inside their category.
+const DEFAULT_ISLANDS = [
+  { id: "isl-aotearoa", name: "Aotearoa" },
+  { id: "isl-fiji", name: "Fiji" },
+  { id: "isl-hawaii", name: "Hawaiʻi" },
+  { id: "isl-samoa", name: "Samoa" },
+  { id: "isl-tahiti", name: "Tahiti" },
+  { id: "isl-tonga", name: "Tonga" },
+];
+const PARK_WIDE = "Around the park";
+// Categories shown together as "Island Villages": island first, then these as sub-sections.
+const VILLAGE_TITLE = "Island Villages";
+const VILLAGE_KINDS = [
+  { id: "presentations", name: "Culture Presentations", add: "+ Presentation", color: 5 },
+  { id: "handson", name: "Hands-On Activities", add: "+ Hands-on activity", color: 4 },
+];
+const COLOR_NAMES = ["Teal", "Orange", "Gold", "Green", "Purple", "Slate", "Rose", "Blue"];
+const PROGRAM_TYPES = {
+  season: { label: "Season", rank: 1 },
+  engagement: { label: "Engagement", rank: 2 },
+  special: { label: "Special Event", rank: 3 },
+};
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DEFAULT_CLOSED_DAYS = [0, 3]; // Sunday & Wednesday
+
+// ---------- small utils ----------
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (s) =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const uid = (p) => `${p}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+function lsGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+
+const pad = (n) => String(n).padStart(2, "0");
+const toStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const todayStr = () => toStr(new Date());
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return toStr(d); };
+const dow = (s) => parse(s).getDay();
+const fmtDate = (s, opts = { weekday: "long", month: "long", day: "numeric", year: "numeric" }) =>
+  parse(s).toLocaleDateString("en-US", opts);
+const fmtShort = (s) => fmtDate(s, { month: "short", day: "numeric", year: "numeric" });
+const toMin = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+function fmtTime(hhmm) {
+  if (!hhmm) return "";
+  let [h, m] = hhmm.split(":").map(Number);
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return m ? `${h}:${pad(m)} ${ap}` : `${h} ${ap}`;
+}
+const fmtRange = (t) => (t.end ? `${fmtTime(t.start)} – ${fmtTime(t.end)}` : fmtTime(t.start));
+const stopName = (id) => state.doc?.stops.find((x) => x.id === id)?.name || "";
+const fmtT = (t) => fmtRange(t) + (t.stopId && stopName(t.stopId) ? ` · ${stopName(t.stopId)}` : "");
+const tchip = (t) => `<span class="tchip">${esc(fmtT(t))}</span>`;
+const mainAct = () => state.doc.activities.find((a) => a.id === state.doc.mainHoursId) || state.doc.activities.find((a) => /park hours/i.test(a.name)) || state.doc.activities.find((a) => catOf(a)?.id === "operations") || null;
+const isTransport = (a) => catOf(a)?.id === "transport";
+const daysLabel = (days) => {
+  const s = [...days].sort().join(",");
+  if (s === "0,1,2,3,4,5,6") return "Every day";
+  if (s === "1,2,3,4,5,6") return "Mon – Sat";
+  if (s === "1,2,3,4,5") return "Mon – Fri";
+  return [...days].sort().map((d) => DAYS[d]).join(", ");
+};
+const closedLabel = (days) => (days.length ? [...days].sort().map((d) => DAYS[d]).join(", ") : "None — open every day");
+const cats = () => state.doc.categories;
+const catOf = (a) => cats().find((c) => c.id === a?.category) || cats().find((c) => c.id === "other") || cats().find((c) => c.id === "activity") || cats()[0];
+const catName = (id) => catOf({ category: id })?.name || "";
+const ccStyle = (c) => `style="--cc: var(--c-${c?.color || 6})"`;
+const blocks = () => [...state.doc.timeBlocks].sort((a, b) => toMin(a.start) - toMin(b.start));
+const blockOf = (hhmm) => { const bl = blocks(); let cur = bl[0]; for (const b of bl) if (toMin(b.start) <= toMin(hhmm)) cur = b; return cur; };
+function blockSpan(b) {
+  const bl = blocks(), i = bl.indexOf(b), next = bl[i + 1];
+  if (i === 0 && next) return `until ${fmtTime(next.start)}`;
+  return next ? `${fmtTime(b.start)} – ${fmtTime(next.start)}` : `from ${fmtTime(b.start)}`;
+}
+// Collapsible category / time-block headings, remembered per viewer.
+let collapsed = new Set();
+try { collapsed = new Set(JSON.parse(lsGet("pcc.collapsed") || "[]")); } catch {}
+const isCol = (key) => collapsed.has(key);
+const saveCol = () => lsSet("pcc.collapsed", JSON.stringify([...collapsed]));
+const colCls = (key) => (isCol(key) ? " collapsed" : "");
+const catHead = (key, title, style = "", catId = null) =>
+  `<h2 class="cat ctoggle" ${style} data-action="toggleCat" data-key="${esc(key)}" role="button" tabindex="0" aria-expanded="${!isCol(key)}">${catId && state.canEdit ? `<span class="cgrip no-print" draggable="true" data-cgrip="${esc(catId)}" title="Drag to reorder categories" aria-label="Reorder category">⠿</span>` : ""}<span class="caret" aria-hidden="true">▾</span>${title}</h2>`;
+const colCtl = (scope) => `<span class="colctl no-print"><button class="btn ghost small" data-action="colAll" data-scope="${scope}" data-mode="collapse">Collapse all</button><button class="btn ghost small" data-action="colAll" data-scope="${scope}" data-mode="expand">Expand all</button></span>`;
+const seg = (action, cur, items) =>
+  `<div class="seg no-print" role="group">${items.map(([id, label]) => `<button type="button" class="${cur === id ? "on" : ""}" data-action="${action}" data-id="${id}" aria-pressed="${cur === id}">${label}</button>`).join("")}</div>`;
+
+// ---------- state ----------
+const state = {
+  doc: null,
+  canEdit: false,
+  offline: false,
+  view: lsGet("pcc.view") || "day",
+  date: todayStr(),
+  manageTab: "villages",
+  programId: null,
+  me: null,
+  log: null,
+  names: {},
+  trMode: lsGet("pcc.trMode") || "run",
+  dayGroup: lsGet("pcc.dayGroup") || "category",
+  baseGroup: lsGet("pcc.baseGroup") || "category",
+  closRange: Number(lsGet("pcc.closRange")) || 90,
+  closWeekly: lsGet("pcc.closWeekly") !== "0",
+};
+const emptyDoc = () => ({ islands: structuredClone(DEFAULT_ISLANDS), dayOverrides: [], stops: [], venues: [], activities: [], programs: [], slots: [], closures: [], closedDays: [...DEFAULT_CLOSED_DAYS], categories: structuredClone(DEFAULT_CATEGORIES), timeBlocks: structuredClone(DEFAULT_TIME_BLOCKS) });
+
+const byId = (list, id) => state.doc[list].find((x) => x.id === id);
+const venueName = (id) => byId("venues", id)?.name || "";
+const islands = () => state.doc.islands || [];
+const islandName = (id) => islands().find((i) => i.id === id)?.name || "";
+// Split a category's items into island groups (islands-list order), then items with no island.
+// A category with no island activities comes back as a single unlabelled group.
+function byIsland(items, actOf) {
+  const known = new Set(islands().map((i) => i.id));
+  if (!items.some((x) => known.has(actOf(x).islandId))) return [{ island: null, items }];
+  const out = [];
+  for (const isl of islands()) {
+    const list = items.filter((x) => actOf(x).islandId === isl.id);
+    if (list.length) out.push({ island: isl, items: list });
+  }
+  const rest = items.filter((x) => !known.has(actOf(x).islandId));
+  if (rest.length) out.push({ island: { id: "", name: PARK_WIDE }, items: rest });
+  return out;
+}
+const villageCats = () => VILLAGE_KINDS.map((k) => cats().find((c) => c.id === k.id)).filter(Boolean);
+const isVillageCat = (c) => VILLAGE_KINDS.some((k) => k.id === c?.id);
+// Island Villages grouping: one group per island × kind, in island order then kind order.
+// Each group carries the island (head shown on its first group) and the kind sub-heading.
+function byVillage(items, actOf) {
+  const vc = villageCats(), known = new Set(islands().map((i) => i.id)), out = [];
+  for (const isl of [...islands(), { id: "", name: "No island set" }]) {
+    const inIsl = items.filter((x) => (isl.id ? actOf(x).islandId === isl.id : !known.has(actOf(x).islandId)));
+    let first = true;
+    for (const c of vc) {
+      const list = inIsl.filter((x) => catOf(actOf(x)) === c);
+      if (!list.length) continue;
+      out.push({ island: isl, kind: c, items: list, showIsland: first, islandCount: inIsl.length });
+      first = false;
+    }
+  }
+  return out;
+}
+const islandHead = (g) =>
+  (g.island && g.showIsland !== false ? `<div class="isle-head">${esc(g.island.name)} <span class="count">· ${g.islandCount ?? g.items.length}</span></div>` : "") +
+  (g.kind ? `<div class="kind-head" ${ccStyle(g.kind)}>${esc(g.kind.name)} <span class="count">· ${g.items.length}</span></div>` : "");
+const repsLabel = (times) => (times.length > 1 ? `<span class="reps">${times.length} times a day</span>` : "");
+const programStatus = (p, ds = todayStr()) => (ds < p.start ? "upcoming" : ds > p.end ? "past" : "active");
+
+// ---------- storage (artifact db) ----------
+let db = null, userApi = null, downloadsApi = null, scheduleRef = null, logRef = null;
+let writeChain = Promise.resolve();
+const enqueue = (fn) => (writeChain = writeChain.then(fn, fn));
+const LIST_KEYS = ["venues", "activities", "programs", "slots", "closures", "stops", "dayOverrides"];
+
+function normalize(data) {
+  const doc = structuredClone(data || {});
+  for (const k of LIST_KEYS) if (!Array.isArray(doc[k])) doc[k] = [];
+  if (!Array.isArray(doc.closedDays)) doc.closedDays = [...DEFAULT_CLOSED_DAYS];
+  if (!Array.isArray(doc.categories) || !doc.categories.length) doc.categories = structuredClone(DEFAULT_CATEGORIES);
+  if (!Array.isArray(doc.timeBlocks) || !doc.timeBlocks.length) doc.timeBlocks = structuredClone(DEFAULT_TIME_BLOCKS);
+  if (!Array.isArray(doc.islands)) doc.islands = structuredClone(DEFAULT_ISLANDS);
+  return doc;
+}
+
+async function load() {
+  render();
+  const use = (n) => (window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+  [db, userApi, downloadsApi] = await Promise.all([use("db"), use("user"), use("downloads")]);
+  if (!db) {
+    state.offline = true;
+    state.doc = emptyDoc();
+    render();
+    return;
+  }
+  const canWrite = userApi ? await userApi.can("data.write") : null;
+  state.canEdit = canWrite !== false; // null = not told: keep controls, a refused write decides
+  state.me = userApi ? await userApi.id() : null;
+  scheduleRef = db.doc("schedule/main");
+  logRef = db.doc("schedule/log");
+  scheduleRef.onSnapshot(
+    (snap) => {
+      state.doc = snap.exists ? normalize(snap.data()) : emptyDoc();
+      render();
+    },
+    () => toast("Lost the live connection to the schedule. Reload the page to reconnect.", true),
+  );
+}
+
+// Apply a change locally, then save it for everyone. Reverts on failure.
+async function commit(summary, mutate) {
+  if (!state.canEdit || !scheduleRef) return toast("You have view-only access to this schedule.", true);
+  const before = state.doc;
+  const next = structuredClone(state.doc);
+  mutate(next);
+  const at = new Date().toISOString();
+  Object.assign(next, { updatedAt: at, updatedBy: state.me });
+  if (JSON.stringify(next).length > 1_500_000) return toast("The schedule is too large to save. Remove old seasons or events, then try again.", true);
+  state.doc = next;
+  render();
+  try {
+    await enqueue(() => scheduleRef.set(next, { summary }));
+    toast("Saved");
+    enqueue(async () => {
+      const snap = await logRef.get();
+      const entries = snap.exists ? [...(snap.data().entries || [])] : [];
+      entries.unshift({ at, by: state.me, summary: String(summary).slice(0, 200) });
+      await logRef.set({ entries: entries.slice(0, 300) });
+      state.log = null;
+      if (state.view === "log") render();
+    }).catch(() => {});
+  } catch (e) {
+    state.doc = before;
+    if (e?.code === "invalid_argument") {
+      state.canEdit = false;
+      toast("You have view-only access to this schedule. Ask the owner for Contributor access to edit.", true);
+    } else if (e?.code === "conflict") {
+      toast("Someone else saved a change just now. The latest schedule is loaded; please make your edit again.", true);
+    } else if (e?.code === "quota_exceeded") {
+      toast("The schedule storage is full. Remove old seasons or events, then try again.", true);
+    } else {
+      toast("Couldn't save. Check your connection and try again.", true);
+    }
+    render();
+  }
+}
+
+
+// ---------- schedule resolution ----------
+// For a date: base schedule, overridden per-activity by the highest-ranked
+// active program (season < engagement < special event) that has times on that weekday.
+// Closures (dated or weekly) hide everything except special events.
+// Weekly closed days: the highest-ranked active program with its own setting wins,
+// otherwise the regular weekly closed days apply.
+const weeklyOwner = (active) => {
+  const rank = (p) => PROGRAM_TYPES[p.type]?.rank ?? 1;
+  return [...active.values()].filter((p) => Array.isArray(p.closedDays)).sort((a, b) => rank(b) - rank(a))[0];
+};
+function weeklyClosure(ds, active) {
+  const d = dow(ds);
+  const owner = weeklyOwner(active);
+  const days = owner ? owner.closedDays : state.doc.closedDays;
+  if (!days.includes(d)) return null;
+  return owner
+    ? { name: `${DAYS_LONG[d]} closure`, note: `Closed ${DAYS_LONG[d]}s during ${owner.name}.`, weekly: true }
+    : { name: `${DAYS_LONG[d]} closure`, note: `Regular weekly closed day.`, weekly: true };
+}
+
+// Does a dated closure apply on this date? Optional weekday filter.
+const closureHits = (c, ds) => c.start <= ds && ds <= (c.end || c.start) && (!c.days?.length || c.days.includes(dow(ds)));
+const activeOn = (ds) => new Map(state.doc.programs.filter((p) => p.start <= ds && ds <= p.end).map((p) => [p.id, p]));
+
+// Full-day closure (dated or weekly) wins over an early close (dated closure with a "from" time).
+// Date changes (doc.dayOverrides) beat everything: open a normally closed date (running another
+// weekday's schedule) or close a normally open one. A season can also open a regular closed weekday.
+const overrideOn = (ds) => state.doc.dayOverrides.find((o) => o.date === ds);
+const nextOpenDay = (d) => { for (let i = 1; i <= 7; i++) { const k = (d + i) % 7; if (!state.doc.closedDays.includes(k)) return k; } return d; };
+function closuresFor(ds, active = activeOn(ds)) {
+  const d = dow(ds), ov = overrideOn(ds);
+  const dated = state.doc.closures.filter((c) => closureHits(c, ds));
+  const earlyOf = () => dated.filter((c) => c.from).sort((a, b) => toMin(a.from) - toMin(b.from))[0] || null;
+  if (ov?.status === "closed")
+    return { closure: { name: ov.reason || "Closed", note: "Date change", override: ov }, earlyClose: null, runAs: d, opening: null };
+  if (ov?.status === "open") {
+    const runAs = Number.isInteger(ov.runAs) ? ov.runAs : d;
+    return { closure: null, earlyClose: earlyOf(), runAs, opening: { name: ov.reason || "Special opening", runAs, override: ov } };
+  }
+  const closure = dated.find((c) => !c.from) || weeklyClosure(ds, active);
+  let runAs = d, opening = null;
+  if (!closure && state.doc.closedDays.includes(d)) {
+    const owner = weeklyOwner(active);
+    runAs = Number.isInteger(owner?.openRunAs) ? owner.openRunAs : nextOpenDay(d);
+    opening = { name: owner ? owner.name : "Special opening", runAs, season: owner };
+  }
+  return { closure, earlyClose: closure ? null : earlyOf(), runAs, opening };
+}
+
+const closureWhen = (c) =>
+  `${fmtShort(c.start)}${c.end && c.end !== c.start ? ` – ${fmtShort(c.end)}` : ""}${c.days?.length ? ` · ${c.days.length === 1 ? DAYS_LONG[c.days[0]] + "s" : closedLabel(c.days)} only` : ""}${c.from ? ` · from ${fmtTime(c.from)}` : " · all day"}`;
+
+function resolveDay(ds) {
+  const doc = state.doc;
+  const active = new Map(doc.programs.filter((p) => p.start <= ds && ds <= p.end).map((p) => [p.id, p]));
+  const { closure, earlyClose, runAs, opening } = closuresFor(ds, active);
+  const d = runAs; // weekday whose schedule applies
+  const ovHours = opening?.override?.hours?.start ? opening.override.hours : null;
+  const main = mainAct();
+  let cutStr = earlyClose ? earlyClose.from : null;
+  if (ovHours?.end && (!cutStr || toMin(ovHours.end) < toMin(cutStr))) cutStr = ovHours.end;
+  const cutoff = cutStr ? toMin(cutStr) : null;
+  const rankOf = (s) => (s.programId ? PROGRAM_TYPES[active.get(s.programId).type]?.rank ?? 1 : 0);
+  const rows = [];
+  for (const a of doc.activities) {
+    if (ovHours && a === main) {
+      rows.push({ activity: a, times: [{ start: ovHours.start, end: ovHours.end || "" }], cancelled: false, cut: false, slots: [], source: null, special: true,
+        notes: [opening.override.reason ? `Special hours — ${opening.override.reason}` : "Special hours"] });
+      continue;
+    }
+    const cands = doc.slots.filter(
+      (s) => s.activityId === a.id && s.days.includes(d) && (s.programId == null || active.has(s.programId)),
+    );
+    if (!cands.length) continue;
+    const max = Math.max(...cands.map(rankOf));
+    if (closure && max < 3) continue;
+    const chosen = cands.filter((s) => rankOf(s) === max);
+    const running = chosen.filter((s) => s.status !== "cancelled");
+    let times = running.flatMap((s) => s.times).sort((x, y) => toMin(x.start) - toMin(y.start))
+      .filter((t, i, arr) => !arr.slice(0, i).some((u) => u.start === t.start && (u.end || "") === (t.end || "") && (u.stopId || "") === (t.stopId || "")));
+    const notes = chosen.map((s) => s.note).filter(Boolean);
+    let cut = false;
+    if (cutoff != null && max < 3) {
+      const kept = times
+        .filter((t) => toMin(t.start) < cutoff)
+        .map((t) => (t.end && toMin(t.end) > cutoff ? { ...t, end: cutStr } : t));
+      cut = kept.length !== times.length || kept.some((t, i) => t !== times[i]);
+      times = kept;
+      if (cut) notes.push(`Park closes at ${fmtTime(cutStr)}`);
+    }
+    rows.push({
+      activity: a,
+      times,
+      cancelled: !times.length,
+      cut,
+      slots: chosen,
+      source: chosen[0].programId ? active.get(chosen[0].programId) : null,
+      notes,
+    });
+  }
+  return { ds, closure, earlyClose, opening, programs: [...active.values()], rows, conflicts: findConflicts(rows) };
+}
+
+// Two different activities in the same venue with overlapping times.
+function findConflicts(rows) {
+  const out = [];
+  const items = rows
+    .filter((r) => !r.cancelled && r.activity.venueId && r.activity.category !== "operations")
+    .flatMap((r) => r.times.map((t) => ({
+      r, t, s: toMin(t.start), e: t.end ? toMin(t.end) : toMin(t.start) + 1,
+    })));
+  for (let i = 0; i < items.length; i++)
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i], b = items[j];
+      if (a.r === b.r || a.r.activity.venueId !== b.r.activity.venueId) continue;
+      if (a.s < b.e && b.s < a.e) out.push({ a, b });
+    }
+  return out;
+}
+
+// ---------- rendering ----------
+function render() {
+  const app = $("#app");
+  if (!state.doc) { app.innerHTML = `<p class="muted pad">Loading…</p>`; return; }
+  if (state.view === "manage" && !state.canEdit) state.view = "day";
+  const views = { hours: hoursView, transport: transportView, closures: closuresView, day: dayView, week: weekView, programs: programsView, manage: manageView, log: logView };
+  app.innerHTML = header() + banner() + `<main class="wrap">${(views[state.view] || dayView)()}</main>`;
+  if (state.view === "log" && !state.log) loadLog();
+}
+
+function header() {
+  const tab = (id, label) =>
+    `<button class="tab ${state.view === id ? "on" : ""}" data-action="view" data-id="${id}">${label}</button>`;
+  const who = state.offline
+    ? `<span class="pill">Not connected</span>`
+    : state.canEdit
+      ? `<span class="pill edit">Can edit</span>`
+      : `<span class="pill">View only</span>`;
+  return `<header class="top">
+    <div class="wrap top-in">
+      <div class="brand"><button class="logo" data-action="view" data-id="day" aria-label="Polynesian Cultural Center — go to today's schedule"><img src="data:image/webp;base64,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" alt="Polynesian Cultural Center"></button><div class="brand-txt"><b>Schedule Hub</b><small>Activity &amp; operating times</small></div></div>
+      <nav class="tabs">${tab("hours", "Hours")}${tab("day", "Day")}${tab("week", "Week")}${tab("transport", "Transportation")}${tab("programs", "Seasons &amp; Events")}${tab("closures", "Closures")}${state.canEdit ? tab("manage", "Manage") : ""}${tab("log", "History")}</nav>
+      <div class="who">${who}</div>
+    </div>
+  </header>`;
+}
+
+function banner() {
+  if (state.offline)
+    return `<div class="banner warn"><div class="wrap">Couldn't connect to the schedule database. Check your connection and reload the page.</div></div>`;
+  if (state.doc.sample)
+    return `<div class="banner"><div class="wrap">This schedule holds <b>sample entries with placeholder times</b>. ${state.canEdit ? "Edit them in <b>Manage</b>, or clear them from Manage → Data." : "An editor needs to replace them with real times."}</div></div>`;
+  if (!state.doc.activities.length)
+    return `<div class="banner"><div class="wrap">No activities yet. ${state.canEdit ? "Start in <b>Manage → Activities</b>, then add their times under <b>Regular schedule</b>." : "An editor needs to add them."}</div></div>`;
+  return "";
+}
+
+function dateNav(step, label) {
+  return `<div class="datenav no-print">
+    <button class="btn ghost" data-action="shift" data-n="${-step}" aria-label="Previous">‹</button>
+    <input type="date" value="${state.date}" data-action="pickdate" aria-label="Pick date">
+    <button class="btn ghost" data-action="shift" data-n="${step}" aria-label="Next">›</button>
+    <button class="btn ghost" data-action="today">Today</button>
+    <span class="grow"></span>
+    ${label}
+  </div>`;
+}
+
+function programChip(p) {
+  return `<span class="chip t-${p.type}">${esc(PROGRAM_TYPES[p.type]?.label)}: ${esc(p.name)}</span>`;
+}
+
+const openingNote = (ds, o) => {
+  const d = dow(ds);
+  const normally = state.doc.closedDays.includes(d) ? `Normally closed on ${DAYS_LONG[d]}s. ` : "";
+  return esc(normally + (o.runAs !== d ? `Running the ${DAYS_LONG[o.runAs]} schedule.` : `Running the regular ${DAYS_LONG[d]} schedule.`));
+};
+
+function dayView() {
+  const r = resolveDay(state.date);
+  const isToday = state.date === todayStr();
+  let html = dateNav(1, "");
+  html += `<div class="dayhead"><div><h1>${esc(fmtDate(state.date))}${isToday ? ` <span class="pill">Today</span>` : ""}</h1>
+    <div class="chips">${r.programs.map(programChip).join("")}</div></div>
+    <div><div class="toolbar">${seg("dayGroup", state.dayGroup, [["category", "By category"], ["time", "By time of day"]])}${colCtl("day")}</div>
+    ${state.canEdit ? `<div class="btnrow dayacts no-print">${r.closure ? `<button class="btn ghost small" data-action="openDay" data-d="${state.date}">Open this day</button>` : `<button class="btn ghost small" data-action="closeDay" data-d="${state.date}">Close this day</button>`}<button class="btn ghost small" data-action="swapDays" data-d="${state.date}">Swap days</button>${overrideOn(state.date) ? `<button class="btn ghost small danger" data-action="delOverride" data-id="${overrideOn(state.date).id}">Undo date change</button>` : ""}</div>` : ""}</div></div>`;
+  if (r.opening)
+    html += `<div class="card openday"><b>Open — ${esc(r.opening.name)}</b><div class="muted">${openingNote(state.date, r.opening)}</div></div>`;
+  if (r.closure)
+    html += `<div class="card closed"><b>Closed — ${esc(r.closure.name)}</b>${r.closure.note ? `<div class="muted">${esc(r.closure.note)}</div>` : ""}</div>`;
+  if (r.earlyClose)
+    html += `<div class="card early"><b>Closes early at ${esc(fmtTime(r.earlyClose.from))} — ${esc(r.earlyClose.name)}</b><div class="muted">${r.earlyClose.note ? `${esc(r.earlyClose.note)} · ` : ""}Times after ${esc(fmtTime(r.earlyClose.from))} are removed or shortened. Special events still run.</div></div>`;
+  if (r.conflicts.length)
+    html += `<div class="card warnbox no-print"><b>⚠ ${r.conflicts.length} venue conflict${r.conflicts.length > 1 ? "s" : ""}</b><ul>${r.conflicts
+      .map(({ a, b }) => `<li>${esc(a.r.activity.name)} (${fmtRange(a.t)}) overlaps ${esc(b.r.activity.name)} (${fmtRange(b.t)}) at ${esc(venueName(a.r.activity.venueId))}</li>`)
+      .join("")}</ul></div>`;
+  if (!r.rows.length) {
+    if (!r.closure) html += `<div class="card empty">Nothing scheduled on this day.</div>`;
+    return html;
+  }
+  const dragOK = state.canEdit && state.dayGroup !== "time";
+  const rowHtml = (x, times = x.times) => `<div class="row ${x.cancelled ? "cancelled" : ""}${dragOK ? " dragitem" : ""}"${dragOK ? ` draggable="true" data-act="${x.activity.id}"` : ""}>
+        <div class="r-name">${dragOK ? `<span class="grip no-print" title="Drag to another category" aria-hidden="true">⋮⋮</span>` : ""}<b>${esc(x.activity.name)}</b><small>${esc(venueName(x.activity.venueId))}</small></div>
+        <div class="r-times">${x.cancelled ? `<span class="tchip off">${x.cut ? "After closing" : "Not running"}</span>` : isTransport(x.activity) ? stopList(times) : times.map(tchip).join("") + (times === x.times ? repsLabel(times) : "")}</div>
+        <div class="r-src">${x.special ? `<span class="chip t-open">Special hours</span>` : x.source ? programChip(x.source) : `<span class="chip t-base">Regular</span>`}${x.notes.map((n) => `<div class="muted small">${esc(n)}</div>`).join("")}</div>
+      </div>`;
+  const section = (key, title, style, inner) => `<section class="group${colCls(key)}" ${style}>${catHead(key, title, style)}<div class="rows">${inner}</div></section>`;
+  if (state.dayGroup === "time") {
+    for (const b of blocks()) {
+      const rs = r.rows
+        .filter((x) => !x.cancelled)
+        .map((x) => ({ x, times: isTransport(x.activity) ? (x.times.length && blockOf(x.times[0].start) === b ? x.times : []) : x.times.filter((t) => blockOf(t.start) === b) }))
+        .filter((y) => y.times.length)
+        .sort((p, q) => toMin(p.times[0].start) - toMin(q.times[0].start));
+      if (rs.length) html += section(`day:tb:${b.id}`, `${esc(b.name)} <span class="count">· ${esc(blockSpan(b))}</span>`, `style="--cc: var(--brand)"`, rs.map((y) => rowHtml(y.x, y.times)).join(""));
+    }
+    const off = r.rows.filter((x) => x.cancelled);
+    if (off.length) html += section("day:off", "Not running", `style="--cc: var(--danger)"`, off.map((x) => rowHtml(x)).join(""));
+    return html;
+  }
+  let vDone = false;
+  for (const c of cats()) {
+    const vil = isVillageCat(c);
+    if (vil && vDone) continue;
+    if (vil) vDone = true;
+    const rows = r.rows.filter((x) => (vil ? isVillageCat(catOf(x.activity)) : catOf(x.activity) === c));
+    const inner = (vil ? byVillage(rows, (x) => x.activity) : byIsland(rows, (x) => x.activity)).map((g) => islandHead(g) + g.items.map((x) => rowHtml(x)).join("")).join("");
+    if (rows.length && vil) html += section("day:villages", `${VILLAGE_TITLE} <span class="count">· ${rows.length}</span>`, ccStyle(c), inner);
+    else if (rows.length) html += dragOK
+      ? `<section class="group catzone${colCls(`day:${c.id}`)}" data-cat="${c.id}" ${ccStyle(c)}>${catHead(`day:${c.id}`, `${esc(c.name)} <span class="count">· ${rows.length}</span>`, ccStyle(c), c.id)}<div class="rows dropzone">${inner}</div></section>`
+      : section(`day:${c.id}`, `${esc(c.name)} <span class="count">· ${rows.length}</span>`, ccStyle(c), inner);
+  }
+  return html;
+}
+
+function weekView() {
+  const d = dow(state.date);
+  const start = addDays(state.date, -((d + 6) % 7)); // Monday
+  const dates = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const days = dates.map(resolveDay);
+  const acts = state.doc.activities.filter((a) => days.some((r) => r.rows.some((x) => x.activity === a)));
+  let html = dateNav(7, `${colCtl("week")}<span class="muted">Week of ${esc(fmtShort(start))}</span>`);
+  html += `<div class="tablewrap"><table class="week"><thead><tr><th>Activity</th>${dates
+    .map((ds, i) => `<th class="${ds === todayStr() ? "today" : ""}"><a href="#" data-action="goday" data-d="${ds}">${DAYS[parse(ds).getDay()]} ${parse(ds).getDate()}</a>
+      ${days[i].closure ? `<div class="chip t-closed">Closed</div>` : ""}${days[i].opening ? `<div class="chip t-open" title="${esc(openingNote(ds, days[i].opening))}">Open${days[i].opening.runAs !== dow(ds) ? ` · ${DAYS[days[i].opening.runAs]} sched.` : ""}</div>` : ""}${days[i].earlyClose ? `<div class="chip t-early" title="${esc(days[i].earlyClose.name)}">Closes ${esc(fmtTime(days[i].earlyClose.from))}</div>` : ""}${days[i].programs.map((p) => `<div class="dot t-${p.type}" title="${esc(p.name)}"></div>`).join("")}</th>`)
+    .join("")}</tr></thead><tbody>`;
+  let vDone = false;
+  for (const c of cats()) {
+    const vil = isVillageCat(c);
+    if (vil && vDone) continue;
+    if (vil) vDone = true;
+    const list = acts.filter((a) => (vil ? isVillageCat(catOf(a)) : catOf(a) === c));
+    if (!list.length) continue;
+    const wk = vil ? "week:villages" : `week:${c.id}`;
+    html += `<tr class="catrow${colCls(wk)}"><td colspan="8" class="ctoggle" ${ccStyle(c)} data-action="toggleCat" data-key="${wk}" role="button" tabindex="0" aria-expanded="${!isCol(wk)}"><span class="caret" aria-hidden="true">▾</span> ${esc(vil ? VILLAGE_TITLE : c.name)} <span class="count">· ${list.length}</span></td></tr>`;
+    if (isCol(wk)) continue;
+    for (const g of (vil ? byVillage(list, (a) => a) : byIsland(list, (a) => a))) {
+    if (g.island && g.showIsland !== false) html += `<tr class="islandrow"><td colspan="8">${esc(g.island.name)}</td></tr>`;
+    if (g.kind) html += `<tr class="kindrow"><td colspan="8">${esc(g.kind.name)}</td></tr>`;
+    for (const a of g.items) {
+      html += `<tr><th scope="row">${esc(a.name)}<small>${esc(venueName(a.venueId))}</small></th>`;
+      for (const r of days) {
+        const x = r.rows.find((y) => y.activity === a);
+        html += `<td class="${x?.source ? `src t-${x.source.type}` : ""}">${
+          !x ? `<span class="muted">—</span>` : x.cancelled ? `<span class="tchip off">Off</span>` : isTransport(a) && x.times.length > 1 ? `<div>${fmtTime(x.times[0].start)} – ${fmtTime(x.times[x.times.length - 1].start)}</div><small>${x.times.length} stops</small>` : x.times.map((t) => `<div>${esc(fmtT(t))}</div>`).join("")
+        }</td>`;
+      }
+      html += `</tr>`;
+    }
+    }
+  }
+  html += `</tbody></table></div>`;
+  if (!acts.length) html += `<div class="card empty">Nothing scheduled this week.</div>`;
+  html += `<p class="muted small legend"><span class="dot t-season"></span> Season <span class="dot t-engagement"></span> Engagement <span class="dot t-special"></span> Special event — tinted cells use program times instead of the regular schedule.</p>`;
+  return html;
+}
+
+const stopList = (times) => `<div class="stops">${times.map((t) => `<div class="stop"><span class="tchip">${esc(fmtTime(t.start))}</span><span>${esc(stopName(t.stopId) || "—")}</span></div>`).join("")}</div>`;
+
+// Transportation: every pickup / return run on the chosen day, by run or by pickup location.
+function transportView() {
+  const r = resolveDay(state.date);
+  const runs = r.rows.filter((x) => isTransport(x.activity));
+  const anyRuns = state.doc.activities.some(isTransport);
+  let html = dateNav(1, "");
+  html += `<div class="dayhead"><div><h1>Transportation</h1><div class="muted">${esc(fmtDate(state.date))}</div></div>
+    <div class="toolbar">${seg("trMode", state.trMode, [["run", "By run"], ["stop", "By pickup location"]])}${state.canEdit ? `<button class="btn no-print" data-action="newRun">+ New bus run</button>` : ""}<button class="btn ghost no-print" data-action="print">Print</button></div></div>`;
+  if (r.closure) html += `<div class="card closed"><b>Closed — ${esc(r.closure.name)}</b>${r.closure.note ? `<div class="muted">${esc(r.closure.note)}</div>` : ""}</div>`;
+  if (r.earlyClose) html += `<div class="card early"><b>Closes early at ${esc(fmtTime(r.earlyClose.from))} — ${esc(r.earlyClose.name)}</b></div>`;
+  if (!anyRuns) return html + `<div class="card empty">No bus runs yet.${state.canEdit ? " Use <b>+ New bus run</b> to add one." : ""}</div>`;
+  if (state.trMode === "stop") {
+    if (!runs.some((x) => !x.cancelled)) return html + (r.closure ? "" : `<div class="card empty">No transportation running on this day.</div>`);
+    const live = runs.filter((x) => !x.cancelled);
+    const ids = [...state.doc.stops.map((x) => x.id), ""];
+    html += `<div class="tablewrap"><table class="list bystop"><thead><tr><th>Pickup location</th>${live.map((x) => `<th>${esc(x.activity.name)}</th>`).join("")}</tr></thead><tbody>`;
+    for (const sid of ids) {
+      const cells = live.map((x) => x.times.filter((t) => (t.stopId || "") === sid));
+      if (!cells.some((c) => c.length)) continue;
+      const st = state.doc.stops.find((x) => x.id === sid);
+      html += `<tr><td><b>${esc(st?.name || "No location set")}</b>${st?.note ? `<small>${esc(st.note)}</small>` : ""}</td>${cells.map((c) => `<td>${c.length ? c.map((t) => esc(fmtTime(t.start))).join("<br>") : `<span class="muted">—</span>`}</td>`).join("")}</tr>`;
+    }
+    html += `</tbody></table></div>`;
+    const off = runs.filter((x) => x.cancelled);
+    if (off.length) html += `<p class="muted small">Not running today: ${off.map((x) => esc(x.activity.name)).join(", ")}</p>`;
+    return html;
+  }
+  const stopNote = (id) => state.doc.stops.find((k) => k.id === id)?.note || "";
+  const card = (a) => {
+    const x = runs.find((y) => y.activity === a);
+    const ed = state.canEdit
+      ? `<div class="btnrow no-print" style="margin-top:.6rem">${(x?.slots || []).map((sl) => `<button class="btn ghost small" data-action="editSlot" data-id="${sl.id}">Edit times${x.slots.length > 1 ? ` (${esc(daysLabel(sl.days))})` : ""}</button>`).join("")}<button class="btn ghost small" data-action="editSlot" data-act="${a.id}">+ Add times</button>${(x?.slots || []).map((sl) => `<button class="btn ghost small danger" data-action="delSlot" data-id="${sl.id}">Clear times${x.slots.length > 1 ? ` (${esc(daysLabel(sl.days))})` : ""}</button>`).join("")}<button class="btn ghost small" data-action="newRun" data-from="${a.id}">Duplicate run</button><button class="btn ghost small danger" data-action="delActivity" data-id="${a.id}">Remove run</button></div>`
+      : "";
+    const body = !x
+      ? `<p class="muted small" style="margin:.25rem 0 0">${r.closure ? "Park closed." : "No times on this day."}</p>`
+      : x.cancelled
+        ? `<span class="tchip off">${x.cut ? "After closing" : "Not running"}</span>`
+        : `<table class="list"><tbody>${x.times.map((t) => `<tr><td>${esc(fmtTime(t.start))}</td><td>${t.stopId ? esc(stopName(t.stopId)) : `<span class="muted">—</span>`}${stopNote(t.stopId) ? `<small>${esc(stopNote(t.stopId))}</small>` : ""}</td></tr>`).join("")}</tbody></table>`;
+    return `<div class="card trcard"><div class="tr-head"><div><b>${esc(a.name)}</b>${a.notes ? `<small>${esc(a.notes)}</small>` : ""}</div>${x ? (x.source ? programChip(x.source) : `<span class="chip t-base">Regular</span>`) : ""}</div>
+      ${body}${(x?.notes || []).map((n) => `<div class="muted small">${esc(n)}</div>`).join("")}${ed}</div>`;
+  };
+  html += `<div class="trcards">${state.doc.activities.filter(isTransport).map(card).join("")}</div>`;
+  if (state.canEdit) html += `<p class="muted small no-print">“Edit times” changes this run’s times on every day that entry covers. To change times for a season or a few dates only, add the times under that season in <b>Seasons &amp; Events</b>.</p>`;
+  return html;
+}
+
+// New bus run: blank, or copied from another run with its stops shifted to a new first pickup time.
+function runForm(fromId = "") {
+  const runs = state.doc.activities.filter(isTransport);
+  const src = runs.find((a) => a.id === fromId);
+  const dlg = openModal(src ? `Duplicate “${src.name}”` : "New bus run", `
+    <label>Run name<input name="name" required maxlength="80" value="${src ? esc(src.name + " (copy)") : ""}" placeholder="e.g. Morning Pickup — Bus 2"></label>
+    <label>Notes <span class="muted small">(optional)</span><input name="notes" maxlength="200" value="${esc(src?.notes || "")}" placeholder="e.g. Hotel pickups to PCC"></label>
+    <label>Copy stops from<select name="from">${opt("", "— none, I'll add stops myself —", fromId)}${runs.map((a) => opt(a.id, a.name, fromId)).join("")}</select></label>
+    <div data-copyonly><label>First pickup at <span class="muted small">(optional — shifts every stop by the same amount)</span><input type="time" name="first"></label>
+      <p class="muted small" data-firsthint style="margin-top:-.4rem"></p></div>`, (f) => {
+    const fd = new FormData(f), name = fd.get("name").trim(), from = fd.get("from"), first = fd.get("first");
+    if (!name) return "Give the run a name.";
+    const srcSlots = from ? state.doc.slots.filter((s) => s.activityId === from && s.programId == null) : [];
+    const firstOf = srcSlots.flatMap((s) => s.times).map((t) => toMin(t.start)).sort((a, b) => a - b)[0];
+    const shift = first && firstOf != null ? toMin(first) - firstOf : 0;
+    const moved = (t) => { const m = toMin(t.start) + shift; return m >= 0 && m < 1440 ? { ...t, start: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, end: "" } : null; };
+    if (srcSlots.some((s) => s.times.some((t) => !moved(t)))) return "That shift pushes a stop past midnight. Pick an earlier first pickup.";
+    const aid = uid("a");
+    commit(`Added bus run “${name}”${from ? ` (stops copied from ${byId("activities", from)?.name}${shift ? `, first pickup ${fmtTime(first)}` : ""})` : ""}`, (doc) => {
+      if (!doc.categories.some((c) => c.id === "transport")) doc.categories.push({ id: "transport", name: "Transportation", color: 8 });
+      const lastT = doc.activities.findLastIndex((x) => x.category === "transport");
+      doc.activities.splice(lastT < 0 ? doc.activities.length : lastT + 1, 0, { id: aid, name, category: "transport", venueId: "", notes: fd.get("notes").trim() });
+      for (const s of srcSlots) doc.slots.push({ id: uid("s"), activityId: aid, programId: null, days: [...s.days], status: s.status, note: s.note || "", times: s.times.map(moved) });
+    });
+  }, src ? "Duplicate" : "Add run");
+  const sync = () => {
+    const from = $("select[name=from]", dlg).value;
+    $("[data-copyonly]", dlg).hidden = !from;
+    const t = state.doc.slots.filter((s) => s.activityId === from && s.programId == null).flatMap((s) => s.times).sort((a, b) => toMin(a.start) - toMin(b.start));
+    $("[data-firsthint]", dlg).textContent = t.length ? `Copies ${t.length} stop${t.length > 1 ? "s" : ""}, currently ${fmtTime(t[0].start)} – ${fmtTime(t[t.length - 1].start)}.` : from ? "That run has no stops yet." : "";
+  };
+  $("select[name=from]", dlg).addEventListener("change", sync);
+  sync();
+}
+
+function stopForm(id) {
+  const v = id ? state.doc.stops.find((x) => x.id === id) : { name: "", note: "" };
+  openModal(id ? "Edit pickup location" : "New pickup location", `<label>Name<input name="name" value="${esc(v.name)}" required maxlength="80" placeholder="e.g. Hilton Hawaiian Village"></label>
+    <label>Where to wait <span class="muted small">(optional)</span><input name="note" value="${esc(v.note)}" maxlength="200" placeholder="e.g. Rainbow Tower bus stop, Ala Moana Blvd"></label>`, (f) => {
+    const fd = new FormData(f), name = fd.get("name").trim(), note = fd.get("note").trim();
+    if (!name) return "Name is required.";
+    commit(`${id ? "Updated" : "Added"} pickup location “${name}”`, (doc) => {
+      if (id) Object.assign(doc.stops.find((x) => x.id === id), { name, note });
+      else doc.stops.push({ id: uid("t"), name, note });
+    });
+  });
+}
+
+// Business hours, laid out like a public listing: weekly main hours + special hours by date.
+function weeklyHours() {
+  const m = mainAct();
+  return DAYS_LONG.map((name, d) => {
+    if (state.doc.closedDays.includes(d)) return { d, name, closed: true, times: [] };
+    const times = m ? state.doc.slots.filter((s) => s.programId == null && s.activityId === m.id && s.days.includes(d) && s.status !== "cancelled").flatMap((s) => s.times) : [];
+    return { d, name, closed: !times.length, times: times.sort((a, b) => toMin(a.start) - toMin(b.start)) };
+  });
+}
+const hoursTxt = (times) => times.map((t) => (t.end ? `${fmtTime(t.start)} – ${fmtTime(t.end)}` : `from ${fmtTime(t.start)}`)).join(", ");
+
+function specialHours(days = 400) {
+  const out = [], m = mainAct(), from = todayStr();
+  for (let i = 0; i < days; i++) {
+    const ds = addDays(from, i);
+    const ov = overrideOn(ds);
+    const dated = state.doc.closures.filter((c) => closureHits(c, ds));
+    if (!ov && !dated.length) continue;
+    const r = resolveDay(ds);
+    const row = m && r.rows.find((x) => x.activity === m);
+    const label = ov ? ov.reason : r.closure ? r.closure.name : r.earlyClose ? r.earlyClose.name : dated[0]?.name;
+    out.push({ ds, label: label || "", closed: !!r.closure || !row || row.cancelled, times: row && !row.cancelled ? row.times : [], ov, early: !r.closure && r.earlyClose });
+  }
+  return out;
+}
+
+function hoursView() {
+  const wk = weeklyHours(), today = dow(todayStr()), m = mainAct(), sp = specialHours();
+  const pencil = (action, label) => (state.canEdit ? `<button class="btn ghost small no-print" data-action="${action}" aria-label="${label}">✎ Edit</button>` : "");
+  let html = `<div class="hours"><div class="viewhead"><div><h1>Business hours</h1><p class="muted small">${m ? `Main hours come from <b>${esc(m.name)}</b>.` : "Add a “Park Hours” activity to show main hours here."}</p></div>
+    <button class="btn ghost no-print" data-action="copyHours">Copy as text</button></div>`;
+  html += `<div class="card hcard"><div class="hhead"><h2>Hours</h2>${pencil("editWeekHours", "Edit weekly hours")}</div><div class="hsub">Open with main hours</div>
+    <table><tbody>${wk.map((w) => `<tr class="${w.d === today ? "today" : ""}"><td>${esc(w.name)}</td><td>${w.closed ? "Closed" : esc(hoursTxt(w.times))}</td></tr>`).join("")}</tbody></table></div>`;
+  html += `<div class="card hcard"><div class="hhead"><h2>Special hours</h2>${state.canEdit ? `<button class="btn small no-print" data-action="addSpecial">+ Add date</button>` : ""}</div>
+    <div class="hsub">Holidays and one-off changes, from today.</div>
+    ${sp.length ? `<table><tbody>${sp.map((x) => `<tr><td>${esc(fmtDate(x.ds, { month: "short", day: "numeric", year: "numeric" }))}<span class="lbl">${esc(fmtDate(x.ds, { weekday: "long" }))}</span></td>
+      <td>${x.label ? `<span class="lbl">${esc(x.label)}</span>` : ""}${x.closed ? `<span class="closedtxt">Closed</span>` : esc(hoursTxt(x.times))}${x.early ? ` <span class="muted small">(closes ${esc(fmtTime(x.early.from))})</span>` : ""}</td>
+      <td class="rowedit no-print">${state.canEdit ? (x.ov ? `<button class="btn ghost small" data-action="editSpecial" data-id="${x.ov.id}">Edit</button><button class="btn ghost small danger" data-action="delOverride" data-id="${x.ov.id}">Remove</button>` : `<button class="btn ghost small" data-action="manageClosures">Edit</button>`) : ""}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="hsub">No special hours yet.</div>`}</div></div>`;
+  return html;
+}
+
+function weekHoursForm() {
+  const wk = weeklyHours(), m = mainAct();
+  if (!m) return toast("Add a “Park Hours” activity under Operational Hours first.", true);
+  openModal("Edit weekly hours", `<p class="muted small">Unchecked days are closed every week. Times set the regular <b>${esc(m.name)}</b>.</p>
+    ${wk.map((w) => `<div class="wkrow"><label class="day" style="margin:0"><input type="checkbox" name="open" value="${w.d}" ${w.closed ? "" : "checked"}>${esc(w.name)}</label>
+      <input type="time" name="s${w.d}" value="${esc(w.times[0]?.start || "12:15")}" aria-label="${esc(w.name)} opens"><span class="to">to</span>
+      <input type="time" name="e${w.d}" value="${esc(w.times[w.times.length - 1]?.end || "21:00")}" aria-label="${esc(w.name)} closes"><span></span></div>`).join("")}
+    <button type="button" class="btn ghost small" data-copyfirst>Copy first open day's times to all open days</button>`, (f) => {
+    const fd = new FormData(f), open = fd.getAll("open").map(Number);
+    const hrs = {};
+    for (const d of open) {
+      const st = fd.get(`s${d}`), en = fd.get(`e${d}`);
+      if (!st) return `Enter an opening time for ${DAYS_LONG[d]}.`;
+      if (en && toMin(en) <= toMin(st)) return `${DAYS_LONG[d]}: closing time must be after opening time.`;
+      hrs[d] = { start: st, end: en || "" };
+    }
+    const groups = {};
+    for (const d of open) { const k = `${hrs[d].start}-${hrs[d].end}`; (groups[k] ||= { t: hrs[d], days: [] }).days.push(d); }
+    commit(`Updated weekly hours: ${open.length ? open.map((d) => `${DAYS[d]} ${hoursTxt([hrs[d]])}`).join(", ") : "closed every day"}`.slice(0, 200), (doc) => {
+      doc.closedDays = [0, 1, 2, 3, 4, 5, 6].filter((d) => !open.includes(d));
+      const keep = doc.slots.filter((s) => !(s.programId == null && s.activityId === m.id));
+      const old = doc.slots.find((s) => s.programId == null && s.activityId === m.id);
+      doc.slots = [...keep, ...Object.values(groups).map((g, i) => ({ id: i === 0 && old ? old.id : uid("s"), activityId: m.id, programId: null, days: g.days, times: [g.t], status: "running", note: i === 0 && old ? old.note || "" : "" }))];
+    });
+  }, "Save", (e, dlg) => {
+    if (!e.target.closest("[data-copyfirst]")) return;
+    const rows = [...dlg.querySelectorAll(".wkrow")].filter((r) => r.querySelector("input[type=checkbox]").checked);
+    if (!rows.length) return;
+    const [s0, e0] = [...rows[0].querySelectorAll("input[type=time]")].map((x) => x.value);
+    for (const r of rows) { const [a, b] = r.querySelectorAll("input[type=time]"); a.value = s0; b.value = e0; }
+  });
+}
+
+function specialForm(existing = null) {
+  const ds = existing?.date || state.date, d0 = dow(ds), wk = weeklyHours();
+  const def = existing?.hours || (wk[d0].closed ? wk[nextOpenDay(d0)].times[0] : wk[d0].times[0]) || { start: "12:15", end: "21:00" };
+  const run0 = existing && Number.isInteger(existing.runAs) ? existing.runAs : state.doc.closedDays.includes(d0) ? nextOpenDay(d0) : d0;
+  const dlg = openModal(existing ? "Edit special hours" : "Add special hours", `
+    <label>Date<input type="date" name="date" value="${esc(ds)}" required></label>
+    <label>Label <span class="muted small">(optional)</span><input name="reason" value="${esc(existing?.reason || "")}" maxlength="80" placeholder="e.g. Thanksgiving, Christmas Eve"></label>
+    <fieldset><legend>This day is</legend><div class="days">
+      <label class="day"><input type="radio" name="status" value="open" ${existing?.status === "closed" ? "" : "checked"}>Open</label>
+      <label class="day"><input type="radio" name="status" value="closed" ${existing?.status === "closed" ? "checked" : ""}>Closed</label></div></fieldset>
+    <div data-openonly>
+      <div class="two"><label>Opens<input type="time" name="hs" value="${esc(def.start || "")}"></label><label>Closes<input type="time" name="he" value="${esc(def.end || "")}"></label></div>
+      <label>Shows &amp; activities follow the schedule of<select name="runAs">${weekdayOpts(run0)}</select></label>
+      <p class="muted small" style="margin-top:-.4rem">Anything after closing time is dropped or shortened. Special events still run.</p>
+    </div>`, (f) => {
+    const fd = new FormData(f), dt = fd.get("date"), status = fd.get("status"), reason = fd.get("reason").trim();
+    const o = { id: existing?.id || uid("o"), date: dt, status, reason };
+    if (status === "open") {
+      const hs = fd.get("hs"), he = fd.get("he");
+      if (!hs) return "Enter an opening time.";
+      if (he && toMin(he) <= toMin(hs)) return "Closing time must be after opening time.";
+      Object.assign(o, { runAs: Number(fd.get("runAs")), hours: { start: hs, end: he || "" } });
+    }
+    state.date = dt;
+    commit(`Special hours ${fmtShort(dt)}: ${reason ? `${reason} — ` : ""}${status === "closed" ? "Closed" : hoursTxt([o.hours])}`, (doc) => putOverride(doc, o));
+  });
+  const sync = () => { $("[data-openonly]", dlg).hidden = $("input[name=status]:checked", dlg).value !== "open"; };
+  dlg.addEventListener("change", (e) => {
+    if (e.target.name === "status") sync();
+    if (e.target.name === "date" && e.target.value && !existing) {
+      const d = dow(e.target.value);
+      $("select[name=runAs]", dlg).value = String(state.doc.closedDays.includes(d) ? nextOpenDay(d) : d);
+    }
+  });
+  sync();
+}
+
+function copyHoursText() {
+  const lines = ["Hours", ...weeklyHours().map((w) => `${w.name}\t${w.closed ? "Closed" : hoursTxt(w.times)}`), "", "Special hours",
+    ...specialHours().map((x) => `${fmtDate(x.ds, { month: "short", day: "numeric", year: "numeric" })}\t${x.label ? `${x.label} — ` : ""}${x.closed ? "Closed" : hoursTxt(x.times)}`)];
+  const txt = lines.join("\n");
+  (navigator.clipboard?.writeText(txt) || Promise.reject()).then(() => toast("Hours copied"), () => download("pcc-hours.txt", txt));
+}
+
+// Upcoming closed days and early closings, for everyone.
+function closuresView() {
+  const from = todayStr(), n = state.closRange;
+  const items = [];
+  for (let i = 0; i < n; i++) {
+    const ds = addDays(from, i);
+    const { closure, earlyClose, opening } = closuresFor(ds);
+    if (closure && (closure.weekly ? state.closWeekly : true)) items.push({ ds, kind: "closed", c: closure });
+    else if (opening && (opening.override || state.closWeekly)) items.push({ ds, kind: "open", c: { name: opening.name, note: openingNote(ds, opening) } });
+    if (!closure && earlyClose) items.push({ ds, kind: "early", c: earlyClose });
+  }
+  let html = `<div class="viewhead"><div><h1>Upcoming closures</h1><p class="muted">Every day the park is closed, closes early, or opens on a normally closed day, starting today.</p></div>${
+    state.canEdit ? `<button class="btn ghost" data-action="manageClosures">Edit closures</button>` : ""}</div>
+    <div class="ctrls no-print"><label>Show next <select data-action="closRange">${[30, 90, 180, 365].map((d) => opt(String(d), `${d} days`, String(n))).join("")}</select></label>
+    <label><input type="checkbox" data-action="closWeekly" ${state.closWeekly ? "checked" : ""}> Include weekly closed days</label>
+    <span class="muted small">${items.filter((x) => x.kind === "closed").length} closed · ${items.filter((x) => x.kind === "early").length} early close · ${items.filter((x) => x.kind === "open").length} special opening</span></div>`;
+  if (!items.length) return html + `<div class="card empty">No closures in the next ${n} days.</div>`;
+  let month = "";
+  html += `<div class="tablewrap"><table class="list closlist"><thead><tr><th>Date</th><th>Status</th><th>Reason</th></tr></thead><tbody>`;
+  for (const x of items) {
+    const m = fmtDate(x.ds, { month: "long", year: "numeric" });
+    if (m !== month) { month = m; html += `<tr class="month"><td colspan="3">${esc(m)}</td></tr>`; }
+    html += `<tr><td class="nowrap"><a href="#" data-action="goday" data-d="${x.ds}">${esc(fmtDate(x.ds, { weekday: "short", month: "short", day: "numeric" }))}</a></td>
+      <td>${x.kind === "closed" ? `<span class="chip t-closed">Closed all day</span>` : x.kind === "open" ? `<span class="chip t-open">Open</span>` : `<span class="chip t-early">Closes at ${esc(fmtTime(x.c.from))}</span>`}</td>
+      <td><b>${esc(x.c.name)}</b>${x.c.note ? `<small>${x.kind === "open" ? x.c.note : esc(x.c.note)}</small>` : ""}</td></tr>`;
+  }
+  return html + `</tbody></table></div>`;
+}
+
+function programsView() {
+  if (state.programId) return programDetail();
+  const progs = [...state.doc.programs].sort((a, b) => a.start.localeCompare(b.start));
+  let html = `<div class="viewhead"><h1>Seasons, Engagements &amp; Special Events</h1>${
+    state.canEdit ? `<button class="btn" data-action="editProgram">+ New</button>` : ""}</div>`;
+  html += timeline(progs);
+  for (const status of ["active", "upcoming", "past"]) {
+    const list = progs.filter((p) => programStatus(p) === status);
+    if (!list.length) continue;
+    html += `<h2 class="sub">${{ active: "Happening now", upcoming: "Upcoming", past: "Past" }[status]}</h2><div class="cards">`;
+    for (const p of status === "past" ? list.reverse() : list) {
+      const n = state.doc.slots.filter((s) => s.programId === p.id).length;
+      html += `<button class="card prog t-${p.type}" data-action="openProgram" data-id="${p.id}">
+        <span class="chip t-${p.type}">${esc(PROGRAM_TYPES[p.type]?.label)}</span>
+        <b>${esc(p.name)}</b>
+        <span class="muted">${esc(fmtShort(p.start))}${p.end !== p.start ? ` – ${esc(fmtShort(p.end))}` : ""}</span>
+        <span class="muted small">${n} schedule entr${n === 1 ? "y" : "ies"}</span>
+      </button>`;
+    }
+    html += `</div>`;
+  }
+  if (!progs.length) html += `<div class="card empty">No seasons or events yet.</div>`;
+  return html;
+}
+
+// 12-month strip starting this month.
+function timeline(progs) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 12, 1);
+  const span = end - start;
+  const pct = (s) => Math.min(100, Math.max(0, ((parse(s) - start) / span) * 100));
+  const visible = progs.filter((p) => parse(p.end) >= start && parse(p.start) < end);
+  if (!visible.length) return "";
+  const months = Array.from({ length: 12 }, (_, i) => new Date(start.getFullYear(), start.getMonth() + i, 1));
+  return `<div class="timeline card">
+    <div class="tl-months">${months.map((m) => `<span>${m.toLocaleDateString("en-US", { month: "short" })}</span>`).join("")}</div>
+    ${visible.map((p) => {
+      const l = pct(p.start), r = pct(addDays(p.end, 1));
+      return `<div class="tl-row"><button class="tl-bar t-${p.type}" style="left:${l}%;width:${Math.max(r - l, 0.6)}%" data-action="openProgram" data-id="${p.id}" title="${esc(p.name)}"><span>${esc(p.name)}</span></button></div>`;
+    }).join("")}
+    <div class="tl-now" style="--p:${pct(todayStr())}"></div>
+  </div>`;
+}
+
+function slotTable(slots, { showActivity = true } = {}) {
+  if (!slots.length) return `<div class="card empty">No times entered yet.</div>`;
+  const sorted = [...slots].sort((a, b) => {
+    const an = byId("activities", a.activityId)?.name || "", bn = byId("activities", b.activityId)?.name || "";
+    return an.localeCompare(bn) || (a.times[0]?.start || "").localeCompare(b.times[0]?.start || "");
+  });
+  return `<div class="tablewrap"><table class="list"><thead><tr>${showActivity ? "<th>Activity</th>" : ""}<th>Days</th><th>Times</th><th>Note</th>${state.canEdit ? "<th></th>" : ""}</tr></thead><tbody>${sorted
+    .map((s) => {
+      const a = byId("activities", s.activityId);
+      return `<tr>${showActivity ? `<td><b>${esc(a?.name || "(deleted activity)")}</b><small>${esc(venueName(a?.venueId))}</small></td>` : ""}
+        <td>${esc(daysLabel(s.days))}</td>
+        <td>${s.status === "cancelled" ? `<span class="tchip off">Not running</span>` : s.times.map(tchip).join(" ")}</td>
+        <td class="muted">${esc(s.note)}</td>
+        ${state.canEdit ? `<td class="actions"><button class="btn ghost small" data-action="editSlot" data-id="${s.id}">Edit</button><button class="btn ghost small danger" data-action="delSlot" data-id="${s.id}">Delete</button></td>` : ""}</tr>`;
+    })
+    .join("")}</tbody></table></div>`;
+}
+
+function programDetail() {
+  const p = byId("programs", state.programId);
+  if (!p) { state.programId = null; return programsView(); }
+  const slots = state.doc.slots.filter((s) => s.programId === p.id);
+  return `<button class="btn ghost small" data-action="backPrograms">‹ All seasons &amp; events</button>
+    <div class="viewhead"><div><span class="chip t-${p.type}">${esc(PROGRAM_TYPES[p.type]?.label)}</span>
+      <h1>${esc(p.name)}</h1>
+      <div class="muted">${esc(fmtDate(p.start))}${p.end !== p.start ? ` → ${esc(fmtDate(p.end))}` : ""}</div>
+      <div class="muted small">Weekly closed days: <b>${Array.isArray(p.closedDays) ? esc(closedLabel(p.closedDays)) : `Same as regular (${esc(closedLabel(state.doc.closedDays))})`}</b></div>
+      ${p.notes ? `<p>${esc(p.notes)}</p>` : ""}</div>
+      ${state.canEdit ? `<div class="btnrow"><button class="btn ghost" data-action="editProgram" data-id="${p.id}">Edit details</button><button class="btn ghost danger" data-action="delProgram" data-id="${p.id}">Delete</button></div>` : ""}
+    </div>
+    <p class="muted small">Times here <b>replace</b> the regular schedule for that activity on matching days while this ${esc(PROGRAM_TYPES[p.type]?.label.toLowerCase())} is active. Activities not listed keep their regular times. Mark an activity “Not running” to cancel it.</p>
+    <div class="viewhead"><h2 class="sub">Schedule</h2>${state.canEdit ? `<button class="btn" data-action="editSlot" data-program="${p.id}">+ Add times</button>` : ""}</div>
+    ${slotTable(slots)}
+    <button class="btn ghost" data-action="goday" data-d="${programStatus(p) === "active" ? todayStr() : p.start}">View on day schedule ›</button>`;
+}
+
+// Regular schedule grouped by category: drag (or arrows / "Move to") to regroup and reorder.
+function slotLine(s) {
+  return `<div class="ab-slot"><span class="ab-days">${esc(daysLabel(s.days))}</span>
+    <span>${s.status === "cancelled" ? `<span class="tchip off">Not running</span>` : s.times.map(tchip).join("")}</span>
+    <span class="muted small">${esc(s.note)}</span>
+    <span class="actions no-print"><button class="btn ghost small" data-action="editSlot" data-id="${s.id}">Edit</button><button class="btn ghost small danger" data-action="delSlot" data-id="${s.id}">Delete</button></span></div>`;
+}
+const firstStart = (s) => (s.times[0] ? toMin(s.times[0].start) : 9999);
+
+function baseByCategory() {
+  const regular = state.doc.slots.filter((s) => s.programId == null);
+  let html = `<p class="muted small no-print">Drag an activity by its ⋮⋮ handle to move it to another category or change its order, or use the arrows and the category menu. Drag a category by its ⠿ handle to reorder categories. The Day and Week views follow this order.</p>`;
+  let vDone = false;
+  for (const c of cats()) {
+    const vil = isVillageCat(c);
+    if (vil && vDone) continue;
+    if (vil) vDone = true;
+    const kid = vil ? "villages" : c.id;
+    const acts = state.doc.activities.filter((a) => (vil ? isVillageCat(catOf(a)) : catOf(a) === c));
+    html += `<section class="group${vil ? "" : " catzone"}${colCls(`base:${kid}`)}"${vil ? "" : ` data-cat="${c.id}"`} ${ccStyle(c)}>${catHead(`base:${kid}`, `${esc(vil ? VILLAGE_TITLE : c.name)} <span class="count">· ${acts.length}</span>`, ccStyle(c), vil ? null : c.id)}<div class="rows${vil ? "" : " dropzone"}">${
+      acts.length ? (vil ? byVillage(acts, (a) => a) : byIsland(acts, (a) => a)).map((g) => islandHead(g) + g.items.map((a) => {
+        const i = acts.indexOf(a);
+        const ss = regular.filter((s) => s.activityId === a.id).sort((x, y) => firstStart(x) - firstStart(y));
+        return `<div class="actblock dragitem" draggable="true" data-act="${a.id}">
+          <div class="ab-head"><span class="grip no-print" title="Drag to move" aria-hidden="true">⋮⋮</span>
+            <div class="grow"><b>${esc(a.name)}</b><small>${esc(venueName(a.venueId))}</small></div>
+            <div class="ab-ctrl no-print">
+              <button class="btn ghost small" data-action="actMove" data-dir="-1" data-id="${a.id}" aria-label="Move ${esc(a.name)} up" ${i === 0 ? "disabled" : ""}>↑</button>
+              <button class="btn ghost small" data-action="actMove" data-dir="1" data-id="${a.id}" aria-label="Move ${esc(a.name)} down" ${i === acts.length - 1 ? "disabled" : ""}>↓</button>
+              <select data-action="moveTo" data-id="${a.id}" aria-label="Category for ${esc(a.name)}">${cats().map((k) => opt(k.id, k.name, catOf(a).id)).join("")}</select>
+              <button class="btn ghost small" data-action="editSlot" data-act="${a.id}">+ Times</button>
+            </div></div>
+          ${ss.length ? `<div class="ab-slots">${ss.map(slotLine).join("")}</div>` : `<div class="muted small ab-none">No regular times.</div>`}
+        </div>`;
+      }).join("")).join("") : `<div class="dropempty">Drag activities here, or pick this category from an activity’s menu</div>`}</div></section>`;
+  }
+  return html;
+}
+
+// Regular schedule grouped by time of day: each time goes in the block its start falls in.
+function baseByTime() {
+  const regular = state.doc.slots.filter((s) => s.programId == null && byId("activities", s.activityId));
+  let html = `<p class="muted small no-print">Times are placed by when they start. Rename the blocks or change where they begin with <b>Edit time blocks</b>.</p>`;
+  for (const b of blocks()) {
+    const items = regular
+      .filter((s) => s.status !== "cancelled")
+      .map((s) => ({ s, times: isTransport(byId("activities", s.activityId)) ? (s.times.length && blockOf(s.times[0].start) === b ? s.times : []) : s.times.filter((t) => blockOf(t.start) === b) }))
+      .filter((x) => x.times.length)
+      .sort((x, y) => toMin(x.times[0].start) - toMin(y.times[0].start));
+    html += `<section class="group${colCls(`basetb:${b.id}`)}">${catHead(`basetb:${b.id}`, `${esc(b.name)} <span class="count">· ${esc(blockSpan(b))} · ${items.length}</span>`, `style="--cc: var(--brand)"`)}`;
+    html += items.length ? `<div class="tablewrap"><table class="list tb"><tbody>${items.map(({ s, times }) => {
+      const a = byId("activities", s.activityId), c = catOf(a);
+      return `<tr><td><b>${esc(a.name)}</b><small><span class="dot" style="--tc: var(--c-${c.color})"></span> ${esc(c.name)}${a.venueId ? ` · ${esc(venueName(a.venueId))}` : ""}</small></td>
+        <td>${esc(daysLabel(s.days))}</td><td>${times.map(tchip).join(" ")}</td><td class="muted">${esc(s.note)}</td>
+        <td class="actions"><button class="btn ghost small" data-action="editSlot" data-id="${s.id}">Edit</button></td></tr>`;
+    }).join("")}</tbody></table></div>` : `<div class="card empty">Nothing in this block.</div>`;
+    html += `</section>`;
+  }
+  const off = regular.filter((s) => s.status === "cancelled");
+  if (off.length) html += `<section class="group${colCls("basetb:off")}">${catHead("basetb:off", "Not running", `style="--cc: var(--danger)"`)}${slotTable(off)}</section>`;
+  return html;
+}
+
+function moveActivity(id, catId, beforeId) {
+  const a = byId("activities", id), c = cats().find((k) => k.id === catId);
+  if (!a || !c || beforeId === id) return;
+  const same = catOf(a) === c;
+  commit(same ? `Reordered “${a.name}” in ${c.name}` : `Moved “${a.name}” to ${c.name}`, (doc) => {
+    const [act] = doc.activities.splice(doc.activities.findIndex((x) => x.id === id), 1);
+    act.category = catId;
+    let j = beforeId ? doc.activities.findIndex((x) => x.id === beforeId) : -1;
+    if (j < 0) {
+      const last = doc.activities.findLastIndex((x) => catOf(x).id === catId);
+      j = last < 0 ? doc.activities.length : last + 1;
+    }
+    doc.activities.splice(j, 0, act);
+  });
+}
+
+function stepActivity(id, dir) {
+  const a = byId("activities", id), c = catOf(a);
+  const list = state.doc.activities.filter((x) => catOf(x) === c);
+  const other = list[list.indexOf(a) + dir];
+  if (!other) return;
+  commit(`Reordered “${a.name}” in ${c.name}`, (doc) => {
+    const i = doc.activities.findIndex((x) => x.id === a.id), k = doc.activities.findIndex((x) => x.id === other.id);
+    [doc.activities[i], doc.activities[k]] = [doc.activities[k], doc.activities[i]];
+  });
+}
+
+function categoriesForm() {
+  const row = (c) => `<div class="crow"><input type="hidden" name="cid" value="${esc(c.id)}"><input name="cname" value="${esc(c.name)}" required maxlength="60" aria-label="Category name" placeholder="e.g. Islands of Polynesia">
+    <select name="ccolor" aria-label="Color">${COLOR_NAMES.map((n, i) => opt(String(i + 1), n, String(c.color || 6))).join("")}</select>
+    <button type="button" class="btn ghost small" data-rowup aria-label="Move up">↑</button><button type="button" class="btn ghost small" data-rowdown aria-label="Move down">↓</button><button type="button" class="btn ghost small danger" data-rowdel aria-label="Remove">✕</button></div>`;
+  openModal("Edit categories", `<p class="muted small">Name your groups however your team thinks about the day, for example <i>Islands of Polynesia</i>, <i>Dinner</i>, <i>Night Show</i>. The order here is the order on the schedule.</p>
+    <div class="rowlist">${cats().map(row).join("")}</div>
+    <button type="button" class="btn ghost small" data-rowadd>+ Add category</button>
+    <p class="muted small">Removing a category moves its activities to the first category in the list.</p>`, (f) => {
+    const fd = new FormData(f);
+    const ids = fd.getAll("cid"), names = fd.getAll("cname").map((x) => x.trim()), colors = fd.getAll("ccolor").map(Number);
+    if (!ids.length) return "Keep at least one category.";
+    if (names.some((n) => !n)) return "Every category needs a name.";
+    const list = ids.map((id, i) => ({ id, name: names[i], color: colors[i] }));
+    commit(`Updated categories: ${names.join(", ")}`.slice(0, 200), (doc) => {
+      doc.categories = list;
+      for (const a of doc.activities) if (!ids.includes(a.category)) a.category = ids[0];
+    });
+  }, "Save", (e, dlg) => rowEditor(e, dlg, () => row({ id: uid("k"), name: "", color: (dlg.querySelectorAll(".crow").length % 8) + 1 })));
+}
+
+function blocksForm() {
+  const row = (b) => `<div class="crow"><input type="hidden" name="bid" value="${esc(b.id)}"><input name="bname" value="${esc(b.name)}" required maxlength="40" aria-label="Block name" placeholder="e.g. Evening">
+    <label class="muted small" style="margin:0">starts <input type="time" name="bstart" value="${esc(b.start)}" required aria-label="Starts at"></label>
+    <button type="button" class="btn ghost small danger" data-rowdel aria-label="Remove">✕</button></div>`;
+  openModal("Edit time blocks", `<p class="muted small">Each block runs from its start time until the next block starts. Times before the earliest block go in the first one.</p>
+    <div class="rowlist">${blocks().map(row).join("")}</div>
+    <button type="button" class="btn ghost small" data-rowadd>+ Add block</button>`, (f) => {
+    const fd = new FormData(f);
+    const ids = fd.getAll("bid"), names = fd.getAll("bname").map((x) => x.trim()), starts = fd.getAll("bstart");
+    if (!ids.length) return "Keep at least one time block.";
+    if (names.some((n) => !n) || starts.some((t) => !t)) return "Every block needs a name and a start time.";
+    if (new Set(starts).size !== starts.length) return "Two blocks can't start at the same time.";
+    const list = ids.map((id, i) => ({ id, name: names[i], start: starts[i] })).sort((a, b) => toMin(a.start) - toMin(b.start));
+    commit(`Updated time blocks: ${list.map((b) => `${b.name} ${fmtTime(b.start)}`).join(", ")}`.slice(0, 200), (doc) => { doc.timeBlocks = list; });
+  }, "Save", (e, dlg) => rowEditor(e, dlg, () => row({ id: uid("b"), name: "", start: "" })));
+}
+
+// Shared add / remove / reorder for the row lists in the two forms above.
+function rowEditor(e, dlg, newRow) {
+  const rowEl = e.target.closest(".crow"), list = $(".rowlist", dlg);
+  if (e.target.closest("[data-rowadd]")) { list.insertAdjacentHTML("beforeend", newRow()); list.lastElementChild.querySelector("input:not([type=hidden])")?.focus(); }
+  else if (e.target.closest("[data-rowdel]")) { if (list.children.length > 1) rowEl.remove(); else toast("Keep at least one.", true); }
+  else if (e.target.closest("[data-rowup]") && rowEl.previousElementSibling) list.insertBefore(rowEl, rowEl.previousElementSibling);
+  else if (e.target.closest("[data-rowdown]") && rowEl.nextElementSibling) list.insertBefore(rowEl.nextElementSibling, rowEl);
+}
+
+// Manage → Island Villages: a card per island with its Culture Presentations and Hands-On Activities.
+function villagesManage() {
+  const regular = (id) => state.doc.slots.filter((s) => s.programId == null && s.activityId === id).sort((x, y) => firstStart(x) - firstStart(y));
+  const item = (a) => {
+    const ss = regular(a.id);
+    return `<li><div class="vtop"><div><b>${esc(a.name)}</b>${a.notes ? `<small>${esc(a.notes)}</small>` : ""}</div>
+      <div class="btnrow no-print">${ss.length ? "" : `<button class="btn ghost small" data-action="editSlot" data-act="${a.id}">+ Show times</button>`}<button class="btn ghost small" data-action="editActivity" data-id="${a.id}">Edit</button></div></div>
+      ${ss.map((x) => `<div class="vslot"><span class="vdays">${esc(daysLabel(x.days))}</span>${x.status === "cancelled" ? `<span class="tchip off">Not running</span>` : x.times.map(tchip).join("") + repsLabel(x.times)}<button class="btn ghost small no-print" data-action="editSlot" data-id="${x.id}">Edit times</button></div>`).join("") || `<span class="muted small">No show times yet.</span>`}</li>`;
+  };
+  let html = `<div class="viewhead"><p class="muted">Every island village with its culture presentations and hands-on activities. Use <b>+ Presentation</b> or <b>+ Hands-on activity</b> to add to an island, then set each show’s begin and end times.</p>
+    <button class="btn ghost" data-action="mtab" data-id="islands">Rename or reorder islands</button></div>`;
+  const kinds = VILLAGE_KINDS.map((k) => ({ ...k, cat: cats().find((c) => c.id === k.id) }));
+  if (kinds.some((k) => !k.cat)) html += `<div class="card warnbox">Add the missing categor${kinds.filter((k) => !k.cat).length > 1 ? "ies" : "y"} ${kinds.filter((k) => !k.cat).map((k) => `“${esc(k.name)}”`).join(" and ")} under <b>Activities → Edit categories</b> to add items here.</div>`;
+  html += `<div class="villages">`;
+  for (const isl of islands()) {
+    const acts = state.doc.activities.filter((a) => a.islandId === isl.id && isVillageCat(catOf(a)));
+    html += `<section class="card village"><div class="vhead"><h2>${esc(isl.name)}</h2><span class="muted small">${acts.length} item${acts.length === 1 ? "" : "s"}</span></div>`;
+    for (const k of kinds) {
+      const list = k.cat ? acts.filter((a) => catOf(a) === k.cat) : [];
+      html += `<div class="vkind" ${ccStyle(k.cat || { color: k.color })}><div class="vkhead"><h3>${esc(k.cat?.name || k.name)} <span class="count">· ${list.length}</span></h3>${k.cat ? `<button class="btn ghost small no-print" data-action="addVillageAct" data-isl="${isl.id}" data-kind="${k.id}">${k.add}</button>` : ""}</div>
+        ${list.length ? `<ul class="vlist">${list.map(item).join("")}</ul>` : `<p class="muted small vnone">None yet.</p>`}</div>`;
+    }
+    html += `</section>`;
+  }
+  const loose = state.doc.activities.filter((a) => isVillageCat(catOf(a)) && !islands().some((i) => i.id === a.islandId));
+  if (loose.length) html += `<section class="card village"><div class="vhead"><h2>No island set</h2><span class="muted small">Edit each one and choose its island</span></div><div class="vkind"><ul class="vlist">${loose.map(item).join("")}</ul></div></section>`;
+  return html + `</div>`;
+}
+
+function manageView() {
+  const t = state.manageTab;
+  const tab = (id, label) => `<button class="tab ${t === id ? "on" : ""}" data-action="mtab" data-id="${id}">${label}</button>`;
+  let html = `<div class="viewhead"><h1>Manage</h1></div><nav class="tabs sub">${tab("villages", VILLAGE_TITLE)}${tab("activities", "Activities")}${tab("base", "Regular schedule")}${tab("islands", "Islands")}${tab("stops", "Transportation")}${tab("venues", "Venues")}${tab("closures", "Closures")}${tab("data", "Data")}</nav>`;
+  if (t === "villages") {
+    html += villagesManage();
+  } else if (t === "activities") {
+    html += `<div class="viewhead"><p class="muted">Everything that has a time: operating hours, shows, dining, demos, tours.</p><div class="btnrow">${colCtl("acts")}<button class="btn ghost" data-action="editCategories">Edit categories</button><button class="btn" data-action="editActivity">+ Activity</button></div></div>`;
+    html += `<p class="muted small no-print">Drag an activity by its ⋮⋮ handle to move it to another category or change its order. Drag a category by its ⠿ handle to reorder categories (tip: Collapse all first). Works with touch too.</p>`;
+    let vDone = false;
+    for (const c of cats()) {
+      const vil = isVillageCat(c);
+      if (vil && vDone) continue;
+      if (vil) vDone = true;
+      const kid = vil ? "villages" : c.id;
+      const list = state.doc.activities.filter((a) => (vil ? isVillageCat(catOf(a)) : catOf(a) === c));
+      html += `<section class="group${vil ? "" : " catzone"}${colCls(`acts:${kid}`)}"${vil ? "" : ` data-cat="${c.id}"`} ${ccStyle(c)}>${catHead(`acts:${kid}`, `${esc(vil ? VILLAGE_TITLE : c.name)} <span class="count">· ${list.length}</span>`, ccStyle(c), vil ? null : c.id)}<div class="rows${vil ? "" : " dropzone"}">${list.length ? (vil ? byVillage(list, (a) => a) : byIsland(list, (a) => a)).map((g) => islandHead(g) + g.items
+        .map((a) => `<div class="actblock dragitem" draggable="true" data-act="${a.id}"><div class="actrow"><span class="grip no-print" title="Drag to move" aria-hidden="true">⋮⋮</span>
+          <div class="grow"><b>${esc(a.name)}</b><small>${esc(venueName(a.venueId))}</small></div><div class="anote">${esc(a.notes)}</div>
+          <div class="ab-ctrl no-print"><select data-action="moveTo" data-id="${a.id}" aria-label="Category for ${esc(a.name)}">${cats().map((k) => opt(k.id, k.name, catOf(a).id)).join("")}</select><button class="btn ghost small" data-action="editActivity" data-id="${a.id}">Edit</button><button class="btn ghost small danger" data-action="delActivity" data-id="${a.id}">Delete</button></div></div></div>`)
+        .join("")).join("") : `<div class="dropempty">Drag activities here, or pick this category from an activity’s menu</div>`}</div></section>`;
+    }
+  } else if (t === "base") {
+    const g = state.baseGroup;
+    html += `<div class="viewhead"><p class="muted">The normal, year-round times. Seasons, engagements and special events override these.</p>
+      <div class="toolbar">${seg("baseGroup", g, [["category", "By category"], ["time", "By time of day"]])}
+      ${colCtl(g === "time" ? "basetb" : "base")}${g === "time" ? `<button class="btn ghost" data-action="editBlocks">Edit time blocks</button>` : `<button class="btn ghost" data-action="editCategories">Edit categories</button>`}
+      <button class="btn" data-action="editSlot">+ Add times</button></div></div>`;
+    html += g === "time" ? baseByTime() : baseByCategory();
+  } else if (t === "islands") {
+    const used = (id) => state.doc.activities.filter((a) => a.islandId === id).length;
+    html += `<div class="viewhead"><p class="muted">The island villages. Activities set to an island are listed under it in their category (for example Daytime → Samoa), in this order. Set an activity’s island with its <b>Edit</b> button.</p><button class="btn" data-action="editIsland">+ Island</button></div>`;
+    html += islands().length ? `<div class="tablewrap"><table class="list"><tbody>${islands().map((v, i) => `<tr><td><b>${esc(v.name)}</b></td><td class="muted small">${used(v.id)} activit${used(v.id) === 1 ? "y" : "ies"}</td>
+      <td class="actions"><button class="btn ghost small" data-action="islandMove" data-dir="-1" data-id="${v.id}" aria-label="Move ${esc(v.name)} up" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn ghost small" data-action="islandMove" data-dir="1" data-id="${v.id}" aria-label="Move ${esc(v.name)} down" ${i === islands().length - 1 ? "disabled" : ""}>↓</button><button class="btn ghost small" data-action="editIsland" data-id="${v.id}">Rename</button><button class="btn ghost small danger" data-action="delIsland" data-id="${v.id}">Delete</button></td></tr>`).join("")}</tbody></table></div>`
+      : `<div class="card empty">No islands yet.</div>`;
+  } else if (t === "stops") {
+    const used = (id) => state.doc.slots.filter((s) => s.times.some((x) => x.stopId === id)).length;
+    const runs = state.doc.activities.filter(isTransport);
+    const regs = (a) => state.doc.slots.filter((s) => s.activityId === a.id && s.programId == null);
+    html += `<div class="viewhead"><div><h2 class="sub" style="margin:0">Bus runs</h2><p class="muted small">Each run is a list of stops with times. Add a run from scratch, or duplicate one and shift its times.</p></div><button class="btn" data-action="newRun">+ New bus run</button></div>`;
+    html += runs.length ? `<div class="tablewrap"><table class="list"><tbody>${runs.map((a, i) => {
+      const sl = regs(a), first = sl.flatMap((x) => x.times).sort((p, q) => toMin(p.start) - toMin(q.start));
+      return `<tr><td><b>${esc(a.name)}</b>${a.notes ? `<small>${esc(a.notes)}</small>` : ""}</td>
+        <td class="small">${first.length ? `${esc(fmtTime(first[0].start))}${first.length > 1 ? ` – ${esc(fmtTime(first[first.length - 1].start))}` : ""} · ${first.length} stop${first.length > 1 ? "s" : ""}<small>${esc(sl.map((x) => daysLabel(x.days)).join("; "))}</small>` : `<span class="muted">No stops yet</span>`}</td>
+        <td class="actions"><button class="btn ghost small" data-action="actMove" data-dir="-1" data-id="${a.id}" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn ghost small" data-action="actMove" data-dir="1" data-id="${a.id}" aria-label="Move down" ${i === runs.length - 1 ? "disabled" : ""}>↓</button>
+          ${sl.length ? sl.map((x) => `<button class="btn ghost small" data-action="editSlot" data-id="${x.id}">Edit stops${sl.length > 1 ? ` (${esc(daysLabel(x.days))})` : ""}</button>`).join("") : `<button class="btn ghost small" data-action="editSlot" data-act="${a.id}">+ Add stops</button>`}
+          <button class="btn ghost small" data-action="editActivity" data-id="${a.id}">Rename</button><button class="btn ghost small" data-action="newRun" data-from="${a.id}">Duplicate</button><button class="btn ghost small danger" data-action="delActivity" data-id="${a.id}">Remove</button></td></tr>`;
+    }).join("")}</tbody></table></div>` : `<div class="card empty">No bus runs yet.</div>`;
+    html += `<div class="viewhead" style="margin-top:1.5rem"><div><h2 class="sub" style="margin:0">Pickup locations</h2><p class="muted small">Hotels and stops used by the runs. This order is the order on the Transportation page.</p></div><button class="btn" data-action="editStop">+ Pickup location</button></div>`;
+    html += state.doc.stops.length ? `<div class="tablewrap"><table class="list"><tbody>${state.doc.stops.map((v, i) => `<tr><td><b>${esc(v.name)}</b>${v.note ? `<small>${esc(v.note)}</small>` : ""}</td><td class="muted small">${used(v.id)} schedule entr${used(v.id) === 1 ? "y" : "ies"}</td>
+      <td class="actions"><button class="btn ghost small" data-action="stopMove" data-dir="-1" data-id="${v.id}" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button class="btn ghost small" data-action="stopMove" data-dir="1" data-id="${v.id}" aria-label="Move down" ${i === state.doc.stops.length - 1 ? "disabled" : ""}>↓</button><button class="btn ghost small" data-action="editStop" data-id="${v.id}">Edit</button><button class="btn ghost small danger" data-action="delStop" data-id="${v.id}">Delete</button></td></tr>`).join("")}</tbody></table></div>`
+      : `<div class="card empty">No pickup locations yet.</div>`;
+  } else if (t === "venues") {
+    html += `<div class="viewhead"><p class="muted">Used to detect two activities booked in the same place at the same time.</p><button class="btn" data-action="editVenue">+ Venue</button></div>
+      <div class="tablewrap"><table class="list"><tbody>${state.doc.venues
+        .map((v) => `<tr><td><b>${esc(v.name)}</b></td><td class="actions"><button class="btn ghost small" data-action="editVenue" data-id="${v.id}">Rename</button><button class="btn ghost small danger" data-action="delVenue" data-id="${v.id}">Delete</button></td></tr>`)
+        .join("")}</tbody></table></div>`;
+  } else if (t === "closures") {
+    const list = [...state.doc.closures].sort((a, b) => a.start.localeCompare(b.start));
+    html += `<div class="card"><h3>Weekly closed days</h3><p class="muted">The park is closed on these days every week. A season, engagement or special event can set its own weekly closed days (for example, open Wednesdays during a busy season) under <b>Seasons &amp; Events → Edit details</b>.</p>
+      <form data-form="weekly"><div class="days" style="margin-bottom:.75rem">${DAYS.map((dn, i) => `<label class="day"><input type="checkbox" name="cd" value="${i}" ${state.doc.closedDays.includes(i) ? "checked" : ""}>${dn}</label>`).join("")}</div>
+      <button class="btn">Save weekly closed days</button></form>
+      ${(() => { const o = state.doc.programs.filter((p) => Array.isArray(p.closedDays)).sort((a, b) => a.start.localeCompare(b.start)); return o.length ? `<p class="muted small" style="margin:.75rem 0 0">Overridden by: ${o.map((p) => `<b>${esc(p.name)}</b> (${esc(fmtShort(p.start))} – ${esc(fmtShort(p.end))}: ${esc(closedLabel(p.closedDays))})`).join("; ")}</p>` : ""; })()}</div>
+      <div class="viewhead"><h2 class="sub">Date changes</h2><div class="btnrow"><button class="btn ghost" data-action="openDay">Open a day</button><button class="btn ghost" data-action="closeDay">Close a day</button><button class="btn" data-action="swapDays">Swap days</button></div></div>
+      <p class="muted small">One-off changes to a single date: open on a normally closed day (choosing whose schedule runs), close a normally open day, or swap the two — for example open Wednesday and close Friday. You can also do this from the Day view.</p>
+      ${(() => { const ov = [...state.doc.dayOverrides].sort((a, b) => a.date.localeCompare(b.date)); return ov.length ? `<div class="tablewrap"><table class="list"><tbody>${ov.map((o) => `<tr><td class="nowrap"><a href="#" data-action="goday" data-d="${o.date}">${esc(fmtDate(o.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" }))}</a></td>
+        <td>${o.status === "open" ? `<span class="chip t-open">Open</span>${o.hours?.start ? ` <span class="small">${esc(hoursTxt([o.hours]))}</span>` : ""}${Number.isInteger(o.runAs) && o.runAs !== dow(o.date) ? ` <span class="muted small">${esc(DAYS_LONG[o.runAs])} schedule</span>` : ""}` : `<span class="chip t-closed">Closed</span>`}</td>
+        <td class="muted">${esc(o.reason)}</td>
+        <td class="actions"><button class="btn ghost small" data-action="editOverride" data-id="${o.id}">Edit</button><button class="btn ghost small danger" data-action="delOverride" data-id="${o.id}">Delete</button></td></tr>`).join("")}</tbody></table></div>` : `<div class="card empty">No date changes.</div>`; })()}
+      <div class="viewhead"><h2 class="sub">Date closures</h2><button class="btn" data-action="editClosure">+ Closure</button></div><p class="muted small">Specific dates the park is closed or closes early (holidays, weather, seasonal early closing). A closure can apply only on certain weekdays and from a set time. Special events still show.</p>
+      <div class="tablewrap"><table class="list"><tbody>${list
+        .map((c) => `<tr><td><b>${esc(c.name)}</b><small>${esc(closureWhen(c))}</small></td><td class="muted">${esc(c.note)}</td>
+          <td class="actions"><button class="btn ghost small" data-action="editClosure" data-id="${c.id}">Edit</button><button class="btn ghost small danger" data-action="delClosure" data-id="${c.id}">Delete</button></td></tr>`)
+        .join("")}</tbody></table></div>`;
+    if (!list.length) html += `<div class="card empty">No closures.</div>`;
+  } else if (t === "data") {
+    const from = todayStr(), to = addDays(from, 30);
+    html += `<div class="card"><h3>Export schedule to CSV</h3><p class="muted">Every activity's resolved times for a date range — opens in Excel or Google Sheets.</p>
+      <form data-form="csv" class="inline"><label>From <input type="date" name="from" value="${from}" required></label><label>To <input type="date" name="to" value="${to}" required></label><button class="btn">Download CSV</button></form></div>
+      <div class="card"><h3>Backup</h3><p class="muted">Download everything as a JSON file, or restore from one (replaces all current data).</p>
+      <div class="btnrow"><button class="btn ghost" data-action="backup">Download backup</button><label class="btn ghost">Restore from file<input type="file" accept="application/json" data-action="restore" hidden></label></div></div>
+      ${state.doc.sample ? `<div class="card"><h3>Sample entries</h3><p class="muted">Keep the sample entries as real ones and hide the sample notice, or remove everything and start with a blank schedule.</p><div class="btnrow"><button class="btn ghost" data-action="keepSample">Keep as real entries</button><button class="btn danger" data-action="startEmpty">Clear everything</button></div></div>` : ""}`;
+  }
+  return html;
+}
+
+function logView() {
+  if (!state.log) return `<h1>Change history</h1><p class="muted">Loading…</p>`;
+  if (!state.log.length) return `<h1>Change history</h1><div class="card empty">No changes saved yet.</div>`;
+  return `<h1>Change history</h1><p class="muted small">The latest 300 changes.</p><div class="tablewrap"><table class="list"><thead><tr><th>When</th><th>Who</th><th>Change</th></tr></thead><tbody>${state.log
+    .map((e) => `<tr><td class="nowrap">${esc(new Date(e.at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }))}</td><td>${esc(state.names[e.by] || (e.by && e.by === state.me ? "You" : "Someone"))}</td><td>${esc(e.summary)}</td></tr>`)
+    .join("")}</tbody></table></div>`;
+}
+
+let logLoading = false;
+async function loadLog() {
+  if (logLoading) return;
+  if (!logRef) { state.log = []; render(); return; }
+  logLoading = true;
+  try {
+    const snap = await logRef.get();
+    state.log = snap.exists ? snap.data().entries || [] : [];
+    const ids = [...new Set(state.log.map((e) => e.by).filter(Boolean))];
+    if (userApi && ids.length) {
+      const ps = await userApi.profiles(ids);
+      for (const id of ids) state.names[id] = ps[id]?.name || "";
+    }
+  } catch { state.log = []; }
+  logLoading = false;
+  if (state.view === "log") render();
+}
+
+
+// ---------- modals ----------
+function openModal(title, body, onSubmit, submitLabel = "Save", onClick = null) {
+  const dlg = document.createElement("dialog");
+  dlg.innerHTML = `<form method="dialog" class="modal"><h2>${esc(title)}</h2>${body}
+    <div class="btnrow end"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" value="ok">${esc(submitLabel)}</button></div></form>`;
+  document.body.append(dlg);
+  const form = $("form", dlg);
+  dlg.addEventListener("click", (e) => {
+    if (e.target.closest("[data-close]")) dlg.close();
+    const add = e.target.closest("[data-addtime]");
+    if (add) $(".times", dlg).insertAdjacentHTML("beforeend", timeRow({ start: "", end: "" }));
+    const rm = e.target.closest("[data-rmtime]");
+    if (rm) rm.closest(".trow").remove();
+    onClick?.(e, dlg);
+  });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const err = onSubmit(form);
+    if (typeof err === "string") { $(".err", dlg)?.remove(); form.insertAdjacentHTML("afterbegin", `<p class="err">${esc(err)}</p>`); return; }
+    dlg.close();
+  });
+  dlg.addEventListener("close", () => dlg.remove());
+  dlg.showModal();
+  $("input, select, textarea", dlg)?.focus();
+  return dlg;
+}
+
+// Parse one clock time: "2pm", "2:30 pm", "14:30", "1230", "8:30p". Bare 1–7 o'clock means PM.
+function parseClock(raw, forcePm = null) {
+  const m = String(raw).trim().toLowerCase().replace(/\./g, "").match(/^(\d{1,2})(?::?(\d{2}))?\s*(am|pm|a|p|noon)?$/);
+  if (!m) return null;
+  let h = Number(m[1]); const mi = Number(m[2] || 0); let ap = m[3] || forcePm;
+  if (h > 23 || mi > 59) return null;
+  if (ap && ap.startsWith("p") && h < 12) h += 12;
+  else if (ap && ap.startsWith("a") && h === 12) h = 0;
+  else if (!ap && h >= 1 && h <= 7) h += 12;
+  return { t: `${pad(h)}:${pad(mi)}`, explicit: !!m[3] };
+}
+// "12:30, 2pm, 3:30 pm" → start times; "11:00 - 8:30p" or "1–3pm" or "11 to 2" → a time span.
+function parseEntries(text) {
+  const out = [], bad = [];
+  for (const chunk of String(text).split(/[,;\n]+/).map((x) => x.trim()).filter(Boolean)) {
+    const rng = chunk.split(/\s*(?:–|—|-|\bto\b|\buntil\b)\s*/i).filter(Boolean);
+    if (rng.length === 2) {
+      const b = parseClock(rng[1]);
+      let a = parseClock(rng[0]);
+      if (!a || !b) { bad.push(chunk); continue; }
+      // "1-3pm": carry the end's pm to an unmarked start when that keeps start before end
+      if (!a.explicit && b.explicit && toMin(a.t) >= toMin(b.t)) { const a2 = parseClock(rng[0], /pm|p$/i.test(rng[1]) ? "pm" : "am"); if (a2 && toMin(a2.t) < toMin(b.t)) a = a2; }
+      let e = b.t;
+      if (toMin(e) <= toMin(a.t) && !b.explicit && toMin(e) + 720 < 1440) e = plusMin(e, 720);
+      if (toMin(e) <= toMin(a.t)) { bad.push(chunk); continue; }
+      out.push({ start: a.t, end: e });
+      continue;
+    }
+    for (const tok of chunk.split(/\s+(?=\d)/)) { const c = parseClock(tok); c ? out.push({ start: c.t, end: "" }) : bad.push(tok); }
+  }
+  const seen = new Set();
+  return { entries: out.filter((x) => (seen.has(x.start + x.end) ? false : seen.add(x.start + x.end))).sort((x, y) => toMin(x.start) - toMin(y.start)), bad };
+}
+const parseTimes = (text) => { const { entries, bad } = parseEntries(text); return { times: entries.map((e) => e.start), bad }; };
+const plusMin = (hhmm, n) => { const t = toMin(hhmm) + n; return t >= 24 * 60 ? "" : `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; };
+
+// Three ways to enter times quickly: a list of start times, one open–close span, or a repeating series.
+const quickBlock = (withButton = true) => `<div class="quick">
+    <div class="days qmode" role="radiogroup" aria-label="How to enter times">
+      <label class="day"><input type="radio" name="qmode" value="list" checked>Start times</label>
+      <label class="day"><input type="radio" name="qmode" value="span">Time span</label>
+      <label class="day"><input type="radio" name="qmode" value="rep">Repeating</label></div>
+    <div class="qrow" data-m="list"><input name="qtimes" placeholder="e.g. 12:30, 2pm, 3:30 pm — or a span like 11:00–8:30p" aria-label="Start times"><span class="small">length</span><input type="number" name="qdur" min="0" max="900" step="5" placeholder="Length (min)" aria-label="Length in minutes"></div>
+    <div class="qrow" data-m="span"><span class="small">From</span><input type="time" name="qs1" aria-label="Opens"><span class="small">to</span><input type="time" name="qs2" aria-label="Closes"></div>
+    <div class="qrow" data-m="rep"><span class="small">First at</span><input type="time" name="qfrom" aria-label="First start"><span class="small">every</span><input type="number" name="qevery" min="5" max="600" step="5" placeholder="min" aria-label="Every minutes"><span class="small">until</span><input type="time" name="qto" aria-label="Last start"><span class="small">length</span><input type="number" name="qdur2" min="0" max="600" step="5" placeholder="Length (min)" aria-label="Length in minutes"></div>
+    ${withButton ? `<div class="qrow"><button type="button" class="btn ghost small" data-qgo>Add these times</button></div>` : ""}
+    <div class="qhint" data-m="list">Separate start times with commas. Use a dash for a span (11:00–8:30p). Without am/pm, 1–7 means PM.</div>
+    <div class="qhint" data-m="span">One block of time, e.g. opening hours 11:00 AM – 8:30 PM.</div>
+    <div class="qhint" data-m="rep">e.g. first at 12:30, every 90 min, until 6:30 → 12:30, 2:00, 3:30, 5:00, 6:30.</div></div>`;
+// Read the quick block. Returns null when nothing was entered, or { error } / { entries }.
+function readQuick(root) {
+  const v = (n) => root.querySelector(`[name="${n}"]`)?.value?.trim() || "";
+  const mode = root.querySelector("input[name=qmode]:checked")?.value || "list";
+  if (mode === "list") {
+    if (!v("qtimes")) return null;
+    const { entries, bad } = parseEntries(v("qtimes"));
+    if (bad.length) return { error: `Couldn't read: ${bad.join(", ")}` };
+    const dur = Number(v("qdur")) || 0;
+    return { entries: entries.map((e) => (e.end || !dur ? e : { start: e.start, end: plusMin(e.start, dur) })) };
+  }
+  if (mode === "span") {
+    if (!v("qs1") && !v("qs2")) return null;
+    if (!v("qs1") || !v("qs2")) return { error: "Enter both the start and end of the time span." };
+    if (toMin(v("qs2")) <= toMin(v("qs1"))) return { error: "The span must end after it starts." };
+    return { entries: [{ start: v("qs1"), end: v("qs2") }] };
+  }
+  if (!v("qfrom") && !v("qto")) return null;
+  const ev = Number(v("qevery")), dur = Number(v("qdur2")) || 0;
+  if (!v("qfrom") || !v("qto") || !ev) return { error: "Fill in first at, every, and until." };
+  if (toMin(v("qto")) < toMin(v("qfrom"))) return { error: "“Until” must be after “first at”." };
+  const entries = [];
+  for (let m = toMin(v("qfrom")); m <= toMin(v("qto")) && entries.length < 60; m += ev) {
+    const st = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+    entries.push({ start: st, end: dur ? plusMin(st, dur) : "" });
+  }
+  return { entries };
+}
+function quickAdd(dlg, entries) {
+  const box = $(".times", dlg);
+  box.querySelectorAll(".trow").forEach((row) => { if (!row.querySelector("input[name=ts]").value) row.remove(); });
+  const have = new Set([...box.querySelectorAll("input[name=ts]")].map((i) => i.value));
+  for (const e of entries) if (!have.has(e.start)) box.insertAdjacentHTML("beforeend", timeRow(e));
+  const rows = [...box.querySelectorAll(".trow")].sort((a, b) => a.querySelector("input[name=ts]").value.localeCompare(b.querySelector("input[name=ts]").value));
+  rows.forEach((row) => box.append(row));
+  if (!rows.length) box.insertAdjacentHTML("beforeend", timeRow({ start: "", end: "" }));
+}
+function wireQuick(dlg) {
+  const go = () => {
+    const q = readQuick($(".quick", dlg));
+    if (!q) return toast("Enter some times first.", true);
+    if (q.error) return toast(q.error, true);
+    quickAdd(dlg, q.entries);
+    $(".quick", dlg).querySelectorAll("input:not([type=radio])").forEach((i) => (i.value = ""));
+    toast(`Added ${q.entries.length} time${q.entries.length > 1 ? "s" : ""}`);
+  };
+  dlg.addEventListener("click", (e) => { if (e.target.closest("[data-qgo]")) go(); });
+  dlg.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.closest(".quick") && e.target.matches("input:not([type=radio])")) { e.preventDefault(); go(); } });
+}
+
+const opt = (v, label, sel) => `<option value="${esc(v)}" ${v === sel ? "selected" : ""}>${esc(label)}</option>`;
+const timeRow = (t) => `<div class="trow"><input type="time" name="ts" value="${esc(t.start)}" required aria-label="Start"><select name="tl" class="tl" aria-label="Pickup location">${opt("", "— location (optional) —", t.stopId || "")}${(state.doc.stops || []).map((x) => opt(x.id, x.name, t.stopId || "")).join("")}</select><span class="to">to</span><input type="time" name="te" value="${esc(t.end || "")}" aria-label="End (optional)"><button type="button" class="btn ghost small" data-rmtime aria-label="Remove time">✕</button></div>`;
+
+// "Shows per day" controls above the time rows. Count adds/removes numbered rows; a show length
+// fills each End time from its Begin time (until the End is typed by hand).
+const showsBar = (count) => `<div class="showsbar"><label>Shows per day<input type="number" name="nshows" min="1" max="24" value="${count}" aria-label="Shows per day"></label>
+  <label>Each show lasts<input type="number" name="showlen" min="0" max="600" step="5" placeholder="min" aria-label="Show length in minutes">min</label>
+  <span class="muted">Set the number of shows, then enter when each one begins and ends. With a length set, end times fill in for you.</span></div>
+  <div class="timehead" aria-hidden="true"><span></span><span>Begins</span><span>to</span><span>Ends</span><span></span></div>`;
+function wireShows(dlg) {
+  const box = $(".times", dlg), cnt = $("input[name=nshows]", dlg), len = $("input[name=showlen]", dlg);
+  if (!box || !cnt || !len) return;
+  const rows = () => [...box.querySelectorAll(".trow")];
+  const startOf = (r) => r.querySelector("[name=ts]").value, endEl = (r) => r.querySelector("[name=te]");
+  const known = rows().find((r) => startOf(r) && endEl(r).value);
+  if (known) { const d = toMin(endEl(known).value) - toMin(startOf(known)); if (d > 0 && rows().every((r) => !startOf(r) || !endEl(r).value || toMin(endEl(r).value) - toMin(startOf(r)) === d)) len.value = d; }
+  const fillEnd = (r) => {
+    const st = startOf(r), e = endEl(r), L = Number(len.value) || 0;
+    if (!st || !L || (e.value && !e.dataset.auto)) return;
+    const v = plusMin(st, L);
+    if (v) { e.value = v; e.dataset.auto = "1"; }
+  };
+  cnt.addEventListener("change", () => {
+    const want = Math.max(1, Math.min(24, Math.round(Number(cnt.value)) || 1));
+    cnt.value = want;
+    while (rows().length < want) box.insertAdjacentHTML("beforeend", timeRow({ start: "", end: "" }));
+    while (rows().length > want) { const rs = rows(); ([...rs].reverse().find((r) => !startOf(r)) || rs[rs.length - 1]).remove(); }
+  });
+  len.addEventListener("change", () => rows().forEach(fillEnd));
+  box.addEventListener("change", (e) => {
+    const r = e.target.closest(".trow");
+    if (!r) return;
+    if (e.target.name === "ts") fillEnd(r);
+    if (e.target.name === "te") delete e.target.dataset.auto;
+  });
+  new MutationObserver(() => {
+    if (!rows().length) box.insertAdjacentHTML("beforeend", timeRow({ start: "", end: "" }));
+    cnt.value = rows().length;
+  }).observe(box, { childList: true });
+}
+// Begin/End rows from a form, validated. Returns { times } or { error }.
+function readRows(fd) {
+  const starts = fd.getAll("ts"), ends = fd.getAll("te");
+  const times = starts.map((st, i) => ({ start: st, end: ends[i] || "" })).filter((t) => t.start);
+  const bad = times.findIndex((t) => t.end && toMin(t.end) <= toMin(t.start));
+  if (bad >= 0) return { error: `Show ${bad + 1}: the end time must be after it begins.` };
+  return { times };
+}
+
+function activityForm(id, preset = null) {
+  const a = id ? byId("activities", id) : { name: "", category: (cats().find((c) => c.id === "show") || cats()[0]).id, venueId: "", notes: "", ...(preset || {}) };
+  const kindLabel = !id && preset ? VILLAGE_KINDS.find((k) => k.id === preset.category)?.name : "";
+  const dlg = openModal(id ? "Edit activity" : kindLabel ? `New ${kindLabel.replace(/ies$/, "y").replace(/s$/, "").toLowerCase()} — ${islandName(preset.islandId)}` : "New activity", `
+    <label>Name<input name="name" value="${esc(a.name)}" required maxlength="80"></label>
+    <label>Category<select name="category">${cats().map((c) => opt(c.id, c.name, catOf(a).id)).join("")}</select></label>
+    <label>Island <span class="muted small">(lists it under that island in its category)</span><select name="islandId">${opt("", `— none (${PARK_WIDE.toLowerCase()}) —`, a.islandId || "")}${islands().map((v) => opt(v.id, v.name, a.islandId || "")).join("")}</select></label>
+    <label>Venue<select name="venueId">${opt("", "— none —", a.venueId)}${state.doc.venues.map((v) => opt(v.id, v.name, a.venueId)).join("")}</select></label>
+    <label>Notes<input name="notes" value="${esc(a.notes)}" maxlength="200"></label>
+    ${id ? editTimesList(id) : `<fieldset><legend>Regular show times <span class="muted small">(optional — add more later)</span></legend>
+      <div class="days" style="margin-bottom:.6rem">${DAYS.map((d, i) => `<label class="day"><input type="checkbox" name="ndays" value="${i}" ${state.doc.closedDays.includes(i) ? "" : "checked"}>${d}</label>`).join("")}</div>
+      ${showsBar(1)}<div class="times">${timeRow({ start: "", end: "" })}</div>
+      <button type="button" class="btn ghost small" data-addtime>+ Add another show</button>${quickBlock()}</fieldset>`}`, (f) => {
+    const fd = new FormData(f);
+    const v = { name: fd.get("name"), category: fd.get("category"), islandId: fd.get("islandId") || "", venueId: fd.get("venueId"), notes: fd.get("notes") };
+    const name = v.name.trim();
+    if (!name) return "Name is required.";
+    let slot = null;
+    if (!id) {
+      const q = readQuick(f);
+      if (q?.error) return q.error;
+      const rr = readRows(fd);
+      if (rr.error) return rr.error;
+      const all = [...rr.times, ...(q?.entries || [])].filter((t, i, arr) => arr.findIndex((u) => u.start === t.start) === i).sort((a, b) => toMin(a.start) - toMin(b.start));
+      if (all.length) {
+        const days = fd.getAll("ndays").map(Number);
+        if (!days.length) return "Pick at least one day for the show times.";
+        slot = { days, times: all };
+      }
+    }
+    commit(`${id ? "Updated" : "Added"} activity “${name}”${slot ? ` with ${slot.times.length} show time${slot.times.length > 1 ? "s" : ""}` : ""}`, (doc) => {
+      if (id) return Object.assign(doc.activities.find((x) => x.id === id), { ...v, name });
+      const aid = uid("a");
+      doc.activities.push({ id: aid, ...v, name });
+      if (slot) doc.slots.push({ id: uid("s"), activityId: aid, programId: null, days: slot.days, times: slot.times, status: "running", note: "" });
+    });
+  }, "Save", (e, dlg) => {
+    const b = e.target.closest("[data-edtimes]");
+    if (!b) return;
+    dlg.close();
+    slotForm(b.dataset.slot || null, null, b.dataset.slot ? "" : id);
+  });
+  if (!id) { wireQuick(dlg); wireShows(dlg); }
+}
+
+// In the Edit activity form: the activity's regular times, each with an Edit button.
+function editTimesList(id) {
+  const ss = state.doc.slots.filter((x) => x.programId == null && x.activityId === id).sort((x, y) => firstStart(x) - firstStart(y));
+  return `<fieldset><legend>Regular show times</legend><div class="edtimes">${ss.length ? ss.map((x) => `<div class="ab-slot"><span class="small"><b>${esc(daysLabel(x.days))}</b>${x.times.length > 1 ? ` · ${x.times.length} shows` : ""}</span>
+    <span>${x.status === "cancelled" ? `<span class="tchip off">Not running</span>` : x.times.map(tchip).join("")}</span>
+    <span><button type="button" class="btn ghost small" data-edtimes data-slot="${x.id}">Edit these times</button></span></div>`).join("") : `<span class="muted small">No regular times yet.</span>`}</div>
+    <button type="button" class="btn ghost small" data-edtimes>+ Add show times</button></fieldset>`;
+}
+
+function slotForm(id, programId = null, activityId = "") {
+  const s = id ? byId("slots", id) : { activityId, programId, days: programId ? [0, 1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4, 5, 6].filter((d) => !state.doc.closedDays.includes(d)), times: [{ start: "", end: "" }], status: "running", note: "" };
+  if (!state.doc.activities.length) return toast("Add an activity first (Manage → Activities).", true);
+  const prog = s.programId ? byId("programs", s.programId) : null;
+  const dlg = openModal(`${id ? "Edit" : "Add"} times${prog ? ` — ${prog.name}` : " — regular schedule"}`, `
+    <label>Activity<select name="activityId" required>${opt("", "Choose…", s.activityId)}${state.doc.activities.map((a) => [islandName(a.islandId) ? `${islandName(a.islandId)} — ${a.name}` : a.name, a]).sort((x, y) => x[0].localeCompare(y[0])).map(([l, a]) => opt(a.id, l, s.activityId)).join("")}</select></label>
+    <fieldset><legend>Days of the week</legend><div class="days">${DAYS.map((d, i) => `<label class="day"><input type="checkbox" name="days" value="${i}" ${s.days.includes(i) ? "checked" : ""}>${d}</label>`).join("")}</div></fieldset>
+    <label>Status<select name="status">${opt("running", "Running at these times", s.status)}${opt("cancelled", "Not running (cancel on these days)", s.status)}</select></label>
+    <fieldset><legend><span class="nt-only">Times <span class="muted small">(end time optional)</span></span><span class="tr-only">Stops — time and location${state.doc.stops.length ? "" : ` <span class="muted small">(add locations in Manage → Pickup locations)</span>`}</span></legend>${showsBar(Math.max(1, s.times.length))}<div class="times">${(s.times.length ? s.times : [{ start: "", end: "" }]).map(timeRow).join("")}</div>
+    <button type="button" class="btn ghost small" data-addtime><span class="nt-only">+ Add another show</span><span class="tr-only">+ Add another stop</span></button>${quickBlock()}</fieldset>
+    <label>Note<input name="note" value="${esc(s.note)}" maxlength="200"></label>`, (f) => {
+    const fd = new FormData(f);
+    const days = fd.getAll("days").map(Number);
+    if (!fd.get("activityId")) return "Choose an activity.";
+    if (!days.length) return "Pick at least one day.";
+    const status = fd.get("status");
+    const starts = fd.getAll("ts"), ends = fd.getAll("te"), locs = fd.getAll("tl");
+    const tr = isTransport(byId("activities", fd.get("activityId")));
+    const times = status === "cancelled" ? [] : starts
+      .map((st, i) => (tr ? { start: st, end: "", ...(locs[i] ? { stopId: locs[i] } : {}) } : { start: st, end: ends[i] || "" }))
+      .filter((t) => t.start);
+    if (status !== "cancelled" && !times.length) return "Enter at least one start time.";
+    const badShow = times.findIndex((t) => t.end && toMin(t.end) <= toMin(t.start));
+    if (badShow >= 0) return `Show ${badShow + 1}: the end time must be after it begins.`;
+    times.sort((a, b) => toMin(a.start) - toMin(b.start));
+    const actName = byId("activities", fd.get("activityId")).name;
+    const entry = { activityId: fd.get("activityId"), days, times, status, note: fd.get("note").trim() };
+    commit(`${id ? "Changed" : "Added"} ${actName} times${prog ? ` for ${prog.name}` : " (regular schedule)"}`, (doc) => {
+      if (id) Object.assign(doc.slots.find((x) => x.id === id), entry);
+      else doc.slots.push({ id: uid("s"), programId: s.programId, ...entry });
+    });
+  });
+  wireQuick(dlg);
+  wireShows(dlg);
+  const form = $("form", dlg), sel = $("select[name=activityId]", dlg);
+  const setMode = () => form.toggleAttribute("data-transport", !!sel.value && isTransport(byId("activities", sel.value)));
+  sel.addEventListener("change", setMode);
+  setMode();
+}
+
+function programForm(id) {
+  const p = id ? byId("programs", id) : { type: "season", name: "", start: state.date, end: state.date, notes: "" };
+  openModal(id ? "Edit details" : "New season or event", `
+    <label>Type<select name="type">${Object.entries(PROGRAM_TYPES).map(([k, v]) => opt(k, v.label, p.type)).join("")}</select></label>
+    <label>Name<input name="name" value="${esc(p.name)}" required maxlength="80"></label>
+    <div class="two"><label>Start date<input type="date" name="start" value="${p.start}" required></label><label>End date<input type="date" name="end" value="${p.end}" required></label></div>
+    <fieldset class="cd"><legend>Weekly closed days</legend>
+      <label class="day" style="margin:0 6px 6px 0"><input type="radio" name="cdmode" value="inherit" ${Array.isArray(p.closedDays) ? "" : "checked"}>Same as regular (${esc(closedLabel(state.doc.closedDays))})</label>
+      <label class="day" style="margin:0 0 6px"><input type="radio" name="cdmode" value="custom" ${Array.isArray(p.closedDays) ? "checked" : ""}>Custom for this ${esc((PROGRAM_TYPES[p.type]?.label || "season").toLowerCase())}</label>
+      <div class="cd-days"><div class="days">${DAYS.map((dn, i) => `<label class="day"><input type="checkbox" name="cd" value="${i}" ${(Array.isArray(p.closedDays) ? p.closedDays : state.doc.closedDays).includes(i) ? "checked" : ""}>${dn}</label>`).join("")}</div>
+      <p class="muted small" style="margin:.4rem 0 0">Checked days are closed while this is active. Leave all unchecked to open every day.</p>
+      <label style="margin:.6rem 0 0">On normally closed days this opens, use the schedule of<select name="openRunAs">${opt("", "The next open day (default)", Number.isInteger(p.openRunAs) ? String(p.openRunAs) : "")}${DAYS_LONG.map((n, i) => state.doc.closedDays.includes(i) ? "" : opt(String(i), n, Number.isInteger(p.openRunAs) ? String(p.openRunAs) : "")).join("")}</select></label></div>
+    </fieldset>
+    <label>Notes<textarea name="notes" rows="2" maxlength="500">${esc(p.notes)}</textarea></label>
+    <p class="muted small">Priority when dates overlap: Special event › Engagement › Season › Regular.</p>`, (f) => {
+    const fd = new FormData(f);
+    const v = { type: fd.get("type"), name: fd.get("name").trim(), start: fd.get("start"), end: fd.get("end"), notes: fd.get("notes"),
+      closedDays: fd.get("cdmode") === "custom" ? fd.getAll("cd").map(Number).sort() : null,
+      openRunAs: fd.get("cdmode") === "custom" && fd.get("openRunAs") !== "" ? Number(fd.get("openRunAs")) : null };
+    if (v.end < v.start) return "End date must be on or after the start date.";
+    const newId = id || uid("p");
+    state.view = "programs";
+    state.programId = newId;
+    commit(`${id ? "Updated" : "Created"} ${PROGRAM_TYPES[v.type].label.toLowerCase()} “${v.name}”`, (doc) => {
+      if (id) Object.assign(doc.programs.find((x) => x.id === id), v);
+      else doc.programs.push({ id: newId, ...v });
+    });
+  });
+}
+
+function islandForm(id) {
+  const v = id ? islands().find((x) => x.id === id) : { name: "" };
+  openModal(id ? "Rename island" : "New island", `<label>Name<input name="name" value="${esc(v.name)}" required maxlength="60" placeholder="e.g. Rapa Nui"></label>`, (f) => {
+    const name = new FormData(f).get("name").trim();
+    if (!name) return "Name is required.";
+    commit(`${id ? "Renamed" : "Added"} island “${name}”`, (doc) => {
+      if (id) doc.islands.find((x) => x.id === id).name = name;
+      else doc.islands.push({ id: uid("isl"), name });
+    });
+  });
+}
+
+function venueForm(id) {
+  const v = id ? byId("venues", id) : { name: "" };
+  openModal(id ? "Rename venue" : "New venue", `<label>Name<input name="name" value="${esc(v.name)}" required maxlength="80"></label>`, (f) => {
+    const name = new FormData(f).get("name").trim();
+    commit(`${id ? "Renamed" : "Added"} venue “${name}”`, (doc) => {
+      if (id) doc.venues.find((x) => x.id === id).name = name;
+      else doc.venues.push({ id: uid("v"), name });
+    });
+  });
+}
+
+function closureForm(id) {
+  const c = id ? byId("closures", id) : { name: "", start: state.date, end: state.date, note: "", days: [], from: "" };
+  openModal(id ? "Edit closure" : "New closure", `
+    <label>Reason<input name="name" value="${esc(c.name)}" required maxlength="80" placeholder="e.g. Christmas Day, Early close Wednesdays"></label>
+    <div class="two"><label>First date<input type="date" name="start" value="${c.start}" required></label><label>Last date<input type="date" name="end" value="${c.end || c.start}" required></label></div>
+    <fieldset><legend>Only on these weekdays <span class="muted small">(leave blank for every day in the range)</span></legend><div class="days">${DAYS.map((dn, i) => `<label class="day"><input type="checkbox" name="cdays" value="${i}" ${c.days?.includes(i) ? "checked" : ""}>${dn}</label>`).join("")}</div></fieldset>
+    <label>Closed from <span class="muted small">(optional — leave blank to close all day)</span><input type="time" name="from" value="${esc(c.from || "")}"></label>
+    <label>Note<input name="note" value="${esc(c.note)}" maxlength="200"></label>`, (f) => {
+    const fd = new FormData(f);
+    const v = { name: fd.get("name").trim(), start: fd.get("start"), end: fd.get("end"), note: fd.get("note").trim(),
+      days: fd.getAll("cdays").map(Number).sort(), from: fd.get("from") || "" };
+    if (v.end < v.start) return "Last date must be on or after the first date.";
+    if (v.days.length) {
+      let hit = false;
+      for (let ds = v.start, i = 0; ds <= v.end && i < 7; ds = addDays(ds, 1), i++) if (v.days.includes(dow(ds))) hit = true;
+      if (!hit) return "None of the chosen weekdays fall within these dates.";
+    }
+    commit(`${id ? "Updated" : "Added"} closure “${v.name}”`, (doc) => {
+      if (id) Object.assign(doc.closures.find((x) => x.id === id), v);
+      else doc.closures.push({ id: uid("c"), ...v });
+    });
+  });
+}
+
+// ---- date changes ----
+const weekdayOpts = (sel) => DAYS_LONG.map((n, i) => opt(String(i), `${n}${state.doc.closedDays.includes(i) ? " (normally closed)" : ""}`, String(sel))).join("");
+const putOverride = (doc, o) => { doc.dayOverrides = doc.dayOverrides.filter((x) => x.date !== o.date && x.id !== o.id); doc.dayOverrides.push(o); };
+
+function openDayForm(date = state.date, existing = null) {
+  const d0 = dow(date);
+  const run0 = existing && Number.isInteger(existing.runAs) ? existing.runAs : state.doc.closedDays.includes(d0) ? nextOpenDay(d0) : d0;
+  openModal("Open a day", `<label>Date<input type="date" name="date" value="${esc(existing?.date || date)}" required></label>
+    <label>Use the schedule of<select name="runAs">${weekdayOpts(run0)}</select></label>
+    <p class="muted small" style="margin-top:-.4rem">The times that normally run on that weekday will run on this date.</p>
+    <label>Reason <span class="muted small">(optional)</span><input name="reason" value="${esc(existing?.reason || "")}" maxlength="80" placeholder="e.g. Open Wednesday for Labor Day week"></label>`, (f) => {
+    const fd = new FormData(f), dt = fd.get("date"), runAs = Number(fd.get("runAs")), reason = fd.get("reason").trim();
+    state.date = dt;
+    commit(`Opened ${fmtShort(dt)} (${DAYS_LONG[runAs]} schedule)`, (doc) => putOverride(doc, { id: existing?.id || uid("o"), date: dt, status: "open", runAs, reason }));
+  }, "Open this day");
+}
+
+function closeDayForm(date = state.date, existing = null) {
+  openModal("Close a day", `<label>Date<input type="date" name="date" value="${esc(existing?.date || date)}" required></label>
+    <label>Reason <span class="muted small">(optional)</span><input name="reason" value="${esc(existing?.reason || "")}" maxlength="80" placeholder="e.g. Closed Friday — open Wednesday instead"></label>
+    <p class="muted small">Special events on this date still show. For a holiday or a range of dates, use Date closures instead.</p>`, (f) => {
+    const fd = new FormData(f), dt = fd.get("date"), reason = fd.get("reason").trim();
+    state.date = dt;
+    commit(`Closed ${fmtShort(dt)}${reason ? ` — ${reason}` : ""}`, (doc) => putOverride(doc, { id: existing?.id || uid("o"), date: dt, status: "closed", reason }));
+  }, "Close this day");
+}
+
+function swapDaysForm(date = state.date) {
+  const closedNow = !!closuresFor(date).closure;
+  let openD = date, closeD = date;
+  if (closedNow) { closeD = addDays(date, 1); while (closuresFor(closeD).closure && closeD < addDays(date, 14)) closeD = addDays(closeD, 1); }
+  else { openD = addDays(date, -1); while (!closuresFor(openD).closure && openD > addDays(date, -7)) openD = addDays(openD, -1); }
+  const dlg = openModal("Swap days", `<p class="muted small">Open one date and close another in one step — for example open Wednesday and close Friday.</p>
+    <div class="two"><label>Open on<input type="date" name="open" value="${openD}" required></label><label>Close on<input type="date" name="close" value="${closeD}" required></label></div>
+    <label><input type="checkbox" name="moveSched" checked> Run the closed day's schedule on the open day <span class="muted small" data-swaphint></span></label>
+    <label>Reason <span class="muted small">(optional)</span><input name="reason" maxlength="80" placeholder="e.g. Swapped for a private event"></label>`, (f) => {
+    const fd = new FormData(f), o = fd.get("open"), c = fd.get("close"), reason = fd.get("reason").trim();
+    if (o === c) return "Pick two different dates.";
+    const runAs = fd.get("moveSched") ? dow(c) : state.doc.closedDays.includes(dow(o)) ? nextOpenDay(dow(o)) : dow(o);
+    state.date = o;
+    commit(`Swapped days: open ${fmtShort(o)}, closed ${fmtShort(c)}`, (doc) => {
+      putOverride(doc, { id: uid("o"), date: o, status: "open", runAs, reason: reason || `Swapped — open instead of ${DAYS_LONG[dow(c)]}, ${fmtDate(c, { month: "short", day: "numeric" })}` });
+      putOverride(doc, { id: uid("o"), date: c, status: "closed", reason: reason || `Swapped — open ${DAYS_LONG[dow(o)]}, ${fmtDate(o, { month: "short", day: "numeric" })} instead` });
+    });
+  }, "Swap");
+  const hint = () => { const c = $("input[name=close]", dlg).value; $("[data-swaphint]", dlg).textContent = c ? `(${DAYS_LONG[dow(c)]} schedule)` : ""; };
+  $("input[name=close]", dlg).addEventListener("change", hint); hint();
+}
+
+function confirmDel(what, run) {
+  openModal("Delete?", `<p>Delete <b>${esc(what)}</b>? This can't be undone (but it's in the change history and any backups).</p>`, () => { run(); }, "Delete");
+}
+
+// ---------- export / import ----------
+async function download(name, text) {
+  if (!downloadsApi) return toast("Downloads aren’t available in this view.", true);
+  try {
+    await downloadsApi.save({ filename: name, data: text });
+  } catch (e) {
+    if (e?.code === "declined") return;
+    toast(e?.code === "rate_limited" ? "A save prompt is already open." : "Couldn’t save the file.", true);
+  }
+}
+
+function exportCsv(from, to) {
+  if (to < from) return toast("“To” must be after “From”.", true);
+  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["Date", "Day", "Activity", "Category", "Island", "Venue", "Times", "Status", "Source", "Notes"].map(cell).join(",")];
+  for (let ds = from, i = 0; ds <= to && i < 731; ds = addDays(ds, 1), i++) {
+    const r = resolveDay(ds);
+    if (r.closure) lines.push([ds, DAYS[dow(ds)], "PARK CLOSED", "", "", "", "", "closed", r.closure.name, r.closure.note].map(cell).join(","));
+    if (r.opening) lines.push([ds, DAYS[dow(ds)], "PARK OPEN (special)", "", "", "", "", "open", r.opening.name, `${DAYS_LONG[r.opening.runAs]} schedule`].map(cell).join(","));
+    if (r.earlyClose) lines.push([ds, DAYS[dow(ds)], `PARK CLOSES AT ${fmtTime(r.earlyClose.from)}`, "", "", "", "", "early close", r.earlyClose.name, r.earlyClose.note].map(cell).join(","));
+    for (const x of r.rows)
+      lines.push([ds, DAYS[dow(ds)], x.activity.name, catName(x.activity.category), islandName(x.activity.islandId), venueName(x.activity.venueId),
+        x.times.map(fmtT).join("; "), x.cancelled ? (x.cut ? "after closing" : "not running") : x.cut ? "shortened (early close)" : "running",
+        x.source ? `${PROGRAM_TYPES[x.source.type].label}: ${x.source.name}` : "Regular", x.notes.join("; ")].map(cell).join(","));
+  }
+  download(`pcc-schedule_${from}_to_${to}.csv`, lines.join("\r\n"), "text/csv");
+}
+
+async function restore(file) {
+  let doc;
+  try { doc = JSON.parse(await file.text()); } catch { return toast("That file isn't valid JSON.", true); }
+  if (!["venues", "activities", "programs", "slots", "closures"].every((k) => Array.isArray(doc?.[k])))
+    return toast("That doesn't look like a Schedule Hub backup.", true);
+  confirmDel("ALL current data and replace it with the backup", () =>
+    commit(`Restored from backup “${file.name}”`, (d) => {
+      for (const k of ["venues", "activities", "programs", "slots", "closures"]) d[k] = doc[k];
+      if (Array.isArray(doc.closedDays)) d.closedDays = doc.closedDays;
+      if (Array.isArray(doc.categories) && doc.categories.length) d.categories = doc.categories;
+      d.stops = Array.isArray(doc.stops) ? doc.stops : [];
+      d.islands = Array.isArray(doc.islands) ? doc.islands : structuredClone(DEFAULT_ISLANDS);
+      d.dayOverrides = Array.isArray(doc.dayOverrides) ? doc.dayOverrides : [];
+      if (Array.isArray(doc.timeBlocks) && doc.timeBlocks.length) d.timeBlocks = doc.timeBlocks;
+      d.sample = false;
+    }));
+}
+
+// ---------- toast ----------
+function toast(msg, bad = false) {
+  const el = Object.assign(document.createElement("div"), { className: `toast ${bad ? "bad" : ""}`, textContent: msg });
+  el.setAttribute("role", "status");
+  document.body.append(el);
+  setTimeout(() => el.remove(), bad ? 6000 : 2500);
+}
+
+// ---------- events ----------
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".cgrip")) return;
+  const el = e.target.closest("[data-action]");
+  if (!el || el.closest("dialog") || el.tagName === "INPUT") return;
+  const { action, id } = el.dataset;
+  const go = (view) => { state.view = view; lsSet("pcc.view", view); render(); window.scrollTo(0, 0); };
+  switch (action) {
+    case "view": state.programId = null; go(id); break;
+    case "shift": state.date = addDays(state.date, Number(el.dataset.n)); render(); break;
+    case "today": state.date = todayStr(); render(); break;
+    case "goday": e.preventDefault(); state.date = el.dataset.d; go("day"); break;
+    case "openProgram": state.programId = id; go("programs"); break;
+    case "backPrograms": state.programId = null; render(); break;
+    case "mtab": state.manageTab = id; render(); break;
+    case "manageClosures": state.manageTab = "closures"; go("manage"); break;
+    case "editActivity": activityForm(id); break;
+    case "editSlot": slotForm(id, el.dataset.program || null, el.dataset.act || ""); break;
+    case "dayGroup": state.dayGroup = id; lsSet("pcc.dayGroup", id); render(); break;
+    case "baseGroup": state.baseGroup = id; lsSet("pcc.baseGroup", id); render(); break;
+    case "editCategories": categoriesForm(); break;
+    case "toggleCat": { const k = el.dataset.key; collapsed.has(k) ? collapsed.delete(k) : collapsed.add(k); saveCol(); render(); break; }
+    case "colAll": {
+      const keys = [...document.querySelectorAll(`[data-action="toggleCat"][data-key^="${el.dataset.scope}:"]`)].map((x) => x.dataset.key);
+      for (const k of keys) el.dataset.mode === "collapse" ? collapsed.add(k) : collapsed.delete(k);
+      saveCol(); render(); break;
+    }
+    case "openDay": openDayForm(el.dataset.d || state.date); break;
+    case "editWeekHours": weekHoursForm(); break;
+    case "addSpecial": specialForm(); break;
+    case "editSpecial": { const o = state.doc.dayOverrides.find((x) => x.id === id); if (o) specialForm(o); break; }
+    case "copyHours": copyHoursText(); break;
+    case "closeDay": closeDayForm(el.dataset.d || state.date); break;
+    case "swapDays": swapDaysForm(el.dataset.d || state.date); break;
+    case "editOverride": { const o = state.doc.dayOverrides.find((x) => x.id === id); if (o) specialForm(o); break; }
+    case "delOverride": {
+      const o = state.doc.dayOverrides.find((x) => x.id === id);
+      if (o) commit(`Removed date change on ${fmtShort(o.date)}`, (d) => { d.dayOverrides = d.dayOverrides.filter((x) => x.id !== id); });
+      break;
+    }
+    case "trMode": state.trMode = id; lsSet("pcc.trMode", id); render(); break;
+    case "print": window.print(); break;
+    case "editStop": stopForm(id); break;
+    case "newRun": runForm(el.dataset.from || ""); break;
+    case "stopMove": {
+      const i = state.doc.stops.findIndex((x) => x.id === id), k = i + Number(el.dataset.dir);
+      if (k < 0 || k >= state.doc.stops.length) break;
+      commit(`Reordered pickup location “${state.doc.stops[i].name}”`, (d) => { [d.stops[i], d.stops[k]] = [d.stops[k], d.stops[i]]; });
+      break;
+    }
+    case "delStop": {
+      const v = state.doc.stops.find((x) => x.id === id);
+      confirmDel(`pickup location ${v.name} (its times stay, without a location)`, () => commit(`Deleted pickup location “${v.name}”`, (d) => {
+        d.stops = d.stops.filter((x) => x.id !== id);
+        for (const sl of d.slots) for (const t of sl.times) if (t.stopId === id) delete t.stopId;
+      }));
+      break;
+    }
+    case "editBlocks": blocksForm(); break;
+    case "actMove": stepActivity(id, Number(el.dataset.dir)); break;
+    case "editProgram": programForm(id); break;
+    case "editVenue": venueForm(id); break;
+    case "addVillageAct": activityForm(null, { category: el.dataset.kind, islandId: el.dataset.isl }); break;
+    case "editIsland": islandForm(id); break;
+    case "islandMove": {
+      const i = islands().findIndex((x) => x.id === id), k = i + Number(el.dataset.dir);
+      if (i < 0 || k < 0 || k >= islands().length) break;
+      commit(`Reordered island “${islands()[i].name}”`, (d) => { [d.islands[i], d.islands[k]] = [d.islands[k], d.islands[i]]; });
+      break;
+    }
+    case "delIsland": {
+      const v = islands().find((x) => x.id === id);
+      confirmDel(`island ${v.name} (its activities stay, listed under “${PARK_WIDE}”)`, () => commit(`Deleted island “${v.name}”`, (d) => {
+        d.islands = d.islands.filter((x) => x.id !== id);
+        d.activities.forEach((a) => { if (a.islandId === id) a.islandId = ""; });
+      }));
+      break;
+    }
+    case "editClosure": closureForm(id); break;
+    case "delActivity": {
+      const a = byId("activities", id);
+      confirmDel(`${a.name} and all of its ${isTransport(a) ? "stops" : "times"}`, () => commit(`${isTransport(a) ? "Removed bus run" : "Deleted activity"} “${a.name}”`, (d) => {
+        d.activities = d.activities.filter((x) => x.id !== id);
+        d.slots = d.slots.filter((s) => s.activityId !== id);
+      }));
+      break;
+    }
+    case "delSlot": {
+      const s = byId("slots", id), a = byId("activities", s.activityId);
+      confirmDel(`these ${a?.name || ""} times`, () => commit(`Removed ${a?.name || "activity"} times`, (d) => { d.slots = d.slots.filter((x) => x.id !== id); }));
+      break;
+    }
+    case "delProgram": {
+      const p = byId("programs", id);
+      confirmDel(`${p.name} and its schedule`, () => {
+        state.programId = null;
+        commit(`Deleted ${PROGRAM_TYPES[p.type].label.toLowerCase()} “${p.name}”`, (d) => {
+          d.programs = d.programs.filter((x) => x.id !== id);
+          d.slots = d.slots.filter((s) => s.programId !== id);
+        });
+      });
+      break;
+    }
+    case "delVenue": {
+      const v = byId("venues", id);
+      confirmDel(`venue ${v.name}`, () => commit(`Deleted venue “${v.name}”`, (d) => {
+        d.venues = d.venues.filter((x) => x.id !== id);
+        d.activities.forEach((a) => { if (a.venueId === id) a.venueId = ""; });
+      }));
+      break;
+    }
+    case "delClosure": {
+      const c = byId("closures", id);
+      confirmDel(`closure ${c.name}`, () => commit(`Deleted closure “${c.name}”`, (d) => { d.closures = d.closures.filter((x) => x.id !== id); }));
+      break;
+    }
+    case "backup": download(`pcc-schedule-backup_${todayStr()}.json`, JSON.stringify(state.doc, null, 2), "application/json"); break;
+    case "startEmpty":
+      confirmDel("every activity, time, season, event and closure", () => commit("Cleared sample data", (d) => {
+        for (const k of ["venues", "activities", "programs", "slots", "closures"]) d[k] = [];
+        d.sample = false;
+      }));
+      break;
+    case "keepSample": commit("Kept sample entries as real data", (d) => { d.sample = false; }); break;
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  const h = e.target.closest?.('[data-action="toggleCat"]');
+  if (h && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); h.click(); }
+});
+
+document.addEventListener("change", (e) => {
+  const el = e.target;
+  if (el.dataset.action === "pickdate" && el.value) { state.date = el.value; render(); }
+  if (el.dataset.action === "moveTo") moveActivity(el.dataset.id, el.value, null);
+  if (el.dataset.action === "closRange") { state.closRange = Number(el.value); lsSet("pcc.closRange", el.value); render(); }
+  if (el.dataset.action === "closWeekly") { state.closWeekly = el.checked; lsSet("pcc.closWeekly", el.checked ? "1" : "0"); render(); }
+  if (el.dataset.action === "restore" && el.files[0]) { restore(el.files[0]); el.value = ""; }
+});
+
+document.addEventListener("submit", (e) => {
+  const f = e.target;
+  if (f.closest("dialog")) return;
+  e.preventDefault();
+  if (f.dataset.form === "csv") exportCsv(f.from.value, f.to.value);
+  if (f.dataset.form === "weekly") {
+    const days = new FormData(f).getAll("cd").map(Number).sort();
+    commit(`Set weekly closed days: ${closedLabel(days)}`, (d) => { d.closedDays = days; });
+  }
+});
+
+// ---------- drag to regroup: Activities, Regular schedule and Day view ----------
+// Mouse uses native drag & drop; touch and pen use pointer events on the ⋮⋮ handle.
+let dragId = null;
+const clearDrag = () => {
+  document.querySelectorAll(".dragging, .dropover, .ghosting").forEach((x) => x.classList.remove("dragging", "dropover", "ghosting"));
+  document.querySelectorAll(".dropmark").forEach((x) => x.remove());
+  document.body.classList.remove("touchdrag");
+};
+function placeMark(z, y) {
+  document.querySelectorAll(".dropover").forEach((x) => x !== z && x.classList.remove("dropover"));
+  z.classList.add("dropover");
+  const zone = $(".dropzone", z);
+  const before = [...zone.querySelectorAll(".dragitem:not(.dragging)")].find((b) => { const r = b.getBoundingClientRect(); return y < r.top + r.height / 2; });
+  let mark = $(".dropmark");
+  if (!mark) mark = Object.assign(document.createElement("div"), { className: "dropmark" });
+  if (before) { if (mark.nextElementSibling !== before) zone.insertBefore(mark, before); }
+  else if (mark.parentElement !== zone || mark.nextElementSibling) zone.append(mark);
+}
+function finishDrop(z, id) {
+  let next = $(".dropmark", z)?.nextElementSibling;
+  while (next && (!next.matches(".dragitem") || next.classList.contains("dragging"))) next = next.nextElementSibling;
+  clearDrag();
+  moveActivity(id, z.dataset.cat, next?.dataset.act || null);
+}
+document.addEventListener("dragstart", (e) => {
+  const b = e.target.closest?.(".dragitem");
+  if (!b || e.target.closest("select, button, input")) return;
+  dragId = b.dataset.act;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", dragId);
+  requestAnimationFrame(() => b.classList.add("dragging"));
+});
+document.addEventListener("dragend", () => { dragId = null; clearDrag(); });
+document.addEventListener("dragover", (e) => {
+  if (!dragId) return;
+  const z = e.target.closest(".catzone");
+  if (!z) return;
+  e.preventDefault();
+  placeMark(z, e.clientY);
+});
+document.addEventListener("drop", (e) => {
+  if (!dragId) return;
+  const z = e.target.closest(".catzone");
+  if (!z) return;
+  e.preventDefault();
+  const id = dragId; dragId = null;
+  finishDrop(z, id);
+});
+
+let tdrag = null, scrollTimer = null;
+document.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse") return;
+  const g = e.target.closest(".grip"), item = g?.closest(".dragitem");
+  if (!item) return;
+  e.preventDefault();
+  tdrag = { id: item.dataset.act, item, y: e.clientY, x: e.clientX };
+  item.classList.add("dragging");
+  document.body.classList.add("touchdrag");
+  try { g.setPointerCapture?.(e.pointerId); } catch {}
+  clearInterval(scrollTimer);
+  scrollTimer = setInterval(() => {
+    if (!tdrag) return;
+    const edge = 70, h = window.innerHeight;
+    if (tdrag.y < edge) window.scrollBy(0, -14); else if (tdrag.y > h - edge) window.scrollBy(0, 14);
+    const z = document.elementFromPoint(tdrag.x, tdrag.y)?.closest(".catzone");
+    if (z) placeMark(z, tdrag.y);
+  }, 30);
+}, { passive: false });
+document.addEventListener("pointermove", (e) => {
+  if (!tdrag) return;
+  e.preventDefault();
+  tdrag.x = e.clientX; tdrag.y = e.clientY;
+  const z = document.elementFromPoint(e.clientX, e.clientY)?.closest(".catzone");
+  if (z) placeMark(z, e.clientY);
+}, { passive: false });
+const endTouch = (e, cancel) => {
+  if (!tdrag) return;
+  clearInterval(scrollTimer);
+  const id = tdrag.id; tdrag = null;
+  const z = !cancel && document.elementFromPoint(e.clientX, e.clientY)?.closest(".catzone");
+  if (z && $(".dropmark", z)) finishDrop(z, id); else clearDrag();
+};
+document.addEventListener("pointerup", (e) => endTouch(e, false));
+document.addEventListener("pointercancel", (e) => endTouch(e, true));
+
+// ---------- drag to reorder categories (⠿ handle on category headings) ----------
+let catDrag = null; // { id, pos: {target, after} }
+const clearCatDrag = () => document.querySelectorAll(".cdragging, .cdrop-before, .cdrop-after").forEach((x) => x.classList.remove("cdragging", "cdrop-before", "cdrop-after"));
+function markCat(z, y) {
+  if (!catDrag || !z || z.dataset.cat === catDrag.id) return;
+  document.querySelectorAll(".cdrop-before, .cdrop-after").forEach((x) => x.classList.remove("cdrop-before", "cdrop-after"));
+  const r = z.getBoundingClientRect(), after = y > r.top + Math.min(r.height / 2, 40);
+  z.classList.add(after ? "cdrop-after" : "cdrop-before");
+  catDrag.pos = { target: z.dataset.cat, after };
+}
+function finishCatDrop() {
+  const d = catDrag; catDrag = null; clearCatDrag();
+  if (!d?.pos) return;
+  const ids = cats().map((c) => c.id).filter((x) => x !== d.id);
+  let i = ids.indexOf(d.pos.target);
+  if (i < 0) return;
+  ids.splice(d.pos.after ? i + 1 : i, 0, d.id);
+  if (ids.join() === cats().map((c) => c.id).join()) return;
+  const moved = cats().find((c) => c.id === d.id);
+  commit(`Reordered categories: ${ids.map((x) => cats().find((c) => c.id === x)?.name).join(", ")}`.slice(0, 200), (doc) => {
+    doc.categories = ids.map((x) => doc.categories.find((c) => c.id === x)).filter(Boolean);
+  });
+}
+document.addEventListener("dragstart", (e) => {
+  const g = e.target.closest?.(".cgrip");
+  if (!g) return;
+  e.stopPropagation();
+  catDrag = { id: g.dataset.cgrip };
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", "cat:" + catDrag.id);
+  requestAnimationFrame(() => g.closest("section.catzone")?.classList.add("cdragging"));
+}, true);
+document.addEventListener("dragover", (e) => {
+  if (!catDrag) return;
+  const z = e.target.closest("section.catzone");
+  if (!z) return;
+  e.preventDefault();
+  markCat(z, e.clientY);
+}, true);
+document.addEventListener("drop", (e) => {
+  if (!catDrag) return;
+  e.preventDefault(); e.stopPropagation();
+  finishCatDrop();
+}, true);
+document.addEventListener("dragend", () => { if (catDrag) { catDrag = null; clearCatDrag(); } }, true);
+
+let tcat = null, tcatTimer = null;
+document.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse") return;
+  const g = e.target.closest(".cgrip");
+  if (!g) return;
+  e.preventDefault(); e.stopPropagation();
+  catDrag = { id: g.dataset.cgrip }; tcat = { x: e.clientX, y: e.clientY };
+  g.closest("section.catzone")?.classList.add("cdragging");
+  document.body.classList.add("touchdrag");
+  try { g.setPointerCapture?.(e.pointerId); } catch {}
+  clearInterval(tcatTimer);
+  tcatTimer = setInterval(() => {
+    if (!tcat) return;
+    if (tcat.y < 70) window.scrollBy(0, -14); else if (tcat.y > window.innerHeight - 70) window.scrollBy(0, 14);
+    markCat(document.elementFromPoint(tcat.x, tcat.y)?.closest("section.catzone"), tcat.y);
+  }, 30);
+}, { capture: true, passive: false });
+document.addEventListener("pointermove", (e) => {
+  if (!tcat) return;
+  e.preventDefault();
+  tcat = { x: e.clientX, y: e.clientY };
+  markCat(document.elementFromPoint(e.clientX, e.clientY)?.closest("section.catzone"), e.clientY);
+}, { capture: true, passive: false });
+const endCatTouch = (cancel) => {
+  if (!tcat) return;
+  clearInterval(tcatTimer); tcat = null; document.body.classList.remove("touchdrag");
+  if (cancel) { catDrag = null; clearCatDrag(); } else finishCatDrop();
+};
+document.addEventListener("pointerup", () => endCatTouch(false), true);
+document.addEventListener("pointercancel", () => endCatTouch(true), true);
+
+load();
+
+</script>
+
+</body></html>

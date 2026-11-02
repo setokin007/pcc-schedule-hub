@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule Hub Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<style>
+:root {
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --bg: #f2f6f5; --surface: #fff; --surface-2: #e8efee; --text: #1c2526; --muted: #5f6b6c;
+  --line: #d6e0df; --brand: #0f5c63; --brand-ink: #fff; --danger: #b42318; --closed-bg: #fdecec;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121718; --surface: #1a2122; --surface-2: #222a2b; --text: #e9eeee; --muted: #9aa8a9;
+    --line: #2f3a3b; --brand: #3fb5bd; --brand-ink: #062426; --danger: #f87171; --closed-bg: #3a1d1d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121718; --surface: #1a2122; --surface-2: #222a2b; --text: #e9eeee; --muted: #9aa8a9;
+  --line: #2f3a3b; --brand: #3fb5bd; --brand-ink: #062426; --danger: #f87171; --closed-bg: #3a1d1d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font-body); }
+h1, h2 { font-family: var(--font-display); margin: 0; }
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.05rem; }
+a { color: var(--brand); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { background: var(--surface); border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; gap: 1rem; align-items: center; min-height: 64px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+.logo { background: #0f5c63; border-radius: 10px; padding: 5px 10px; line-height: 0; }
+.logo img { height: 40px; width: auto; }
+header .grow { flex: 1; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+main.wrap { padding-top: 1.5rem; padding-bottom: 4rem; }
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 1.25rem; overflow: hidden; }
+.card-head { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 1rem 1.1rem .6rem; }
+.card-head p { margin: .2rem 0 0; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .55rem 1.1rem; border-top: 1px solid var(--line); vertical-align: middle; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+td.nowrap, th.nowrap { white-space: nowrap; }
+input, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.btn { display: inline-flex; align-items: center; gap: .35rem; background: var(--brand); color: var(--brand-ink); border: 1px solid var(--brand); border-radius: 8px; padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; font-size: .88rem; }
+.btn.ghost { background: var(--surface); color: var(--text); border-color: var(--line); font-weight: 500; }
+.btn.danger { color: var(--danger); }
+.btn:disabled { opacity: .5; cursor: default; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: .78rem; }
+.me { font-weight: 600; }
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: .9rem; max-width: calc(100% - 32px); display: none; z-index: 20; }
+#toast.err { background: var(--danger); color: #fff; }
+.denied { max-width: 520px; margin: 3rem auto; text-align: center; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="./" aria-label="Back to the Schedule Hub"><img src="logo.webp" alt="Polynesian Cultural Center"></a>
+    <div class="grow"><h1>Admin</h1><div class="muted small">Staff access and schedule history</div></div>
+    <a href="./">← Back to schedule</a>
+    <span class="muted small" id="who"></span>
+    <button class="btn ghost" type="button" id="signout">Sign out</button>
+  </div>
+</header>
+<main class="wrap" id="main"><p class="muted">Loading…</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+  var ROLES = [["viewer", "Viewer — can see the schedule"], ["editor", "Editor — can change the schedule"], ["admin", "Admin — can also manage access"]];
+  var me = null, sb = null, users = [], history = [], filter = "";
+  var $ = function (s) { return document.querySelector(s); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function when(ts) { return ts ? new Date(ts).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"; }
+  var toastTimer;
+  function toast(msg, isErr) {
+    var t = $("#toast"); t.textContent = msg; t.className = isErr ? "err" : ""; t.style.display = "block";
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.style.display = "none"; }, 4500);
+  }
+  function nameOf(id) {
+    var u = users.find(function (x) { return x.id === id; });
+    return u ? (u.full_name || u.email) : (id ? "Former user" : "System import");
+  }
+  function download(name, text) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  function load() {
+    return Promise.all([
+      sb.from("profiles").select("id,email,full_name,role,created_at,last_seen_at").order("email"),
+      sb.from("schedule_history").select("id,version,summary,changed_at,changed_by").eq("path", "schedule/main").order("id", { ascending: false }).limit(150),
+    ]).then(function (r) {
+      if (r[0].error) throw r[0].error;
+      if (r[1].error) throw r[1].error;
+      users = r[0].data; history = r[1].data;
+      render();
+    }).catch(function (e) { toast("Couldn't load: " + e.message, true); });
+  }
+
+  function render() {
+    var adminCount = users.filter(function (u) { return u.role === "admin"; }).length;
+    var shown = users.filter(function (u) { return !filter || (u.email + " " + (u.full_name || "")).toLowerCase().indexOf(filter) !== -1; });
+    var userRows = shown.map(function (u) {
+      var lockLastAdmin = u.role === "admin" && adminCount <= 1;
+      return "<tr><td><span class='" + (u.id === me.id ? "me" : "") + "'>" + esc(u.full_name || "—") + "</span>" + (u.id === me.id ? " <span class='pill'>you</span>" : "") +
+        "<div class='muted small'>" + esc(u.email) + "</div></td>" +
+        "<td><select data-user='" + esc(u.id) + "' aria-label='Access for " + esc(u.email) + "'" + (lockLastAdmin ? " disabled title='At least one admin is required'" : "") + ">" +
+        ROLES.map(function (r) { return "<option value='" + r[0] + "'" + (u.role === r[0] ? " selected" : "") + ">" + esc(r[1]) + "</option>"; }).join("") +
+        "</select></td><td class='nowrap small'>" + esc(when(u.last_seen_at)) + "</td><td class='nowrap small'>" + esc(when(u.created_at)) + "</td></tr>";
+    }).join("");
+
+    var histRows = history.map(function (h, i) {
+      return "<tr><td class='nowrap small'>" + esc(when(h.changed_at)) + "</td><td>" + esc(nameOf(h.changed_by)) + "</td><td>" + esc(h.summary || "Saved") +
+        "</td><td class='nowrap'>v" + h.version + (i === 0 ? " <span class='pill'>current</span>" : "") + "</td>" +
+        "<td class='nowrap'><button class='btn ghost' data-dl='" + h.id + "'>Download</button> " +
+        (i === 0 ? "" : "<button class='btn ghost danger' data-restore='" + h.id + "' data-v='" + h.version + "'>Restore</button>") + "</td></tr>";
+    }).join("");
+
+    $("#main").innerHTML =
+      "<section class='card'><div class='card-head'><div><h2>Staff access</h2><p class='muted small'>Anyone with a @polynesia.com email who signs in appears here as a Viewer. Choose who can edit.</p></div>" +
+      "<input type='search' id='q' placeholder='Search people' value='" + esc(filter) + "' aria-label='Search people'></div>" +
+      "<div class='tablewrap'><table><thead><tr><th>Person</th><th>Access</th><th class='nowrap'>Last active</th><th class='nowrap'>First sign-in</th></tr></thead><tbody>" +
+      (userRows || "<tr><td colspan='4' class='muted'>No one matches.</td></tr>") + "</tbody></table></div></section>" +
+
+      "<section class='card'><div class='card-head'><div><h2>Schedule history</h2><p class='muted small'>Every save is kept. Restoring makes an older version current again (and is itself recorded).</p></div>" +
+      "<div><button class='btn ghost' id='refresh'>Refresh</button> <button class='btn' id='backup'>Download current schedule</button></div></div>" +
+      "<div class='tablewrap'><table><thead><tr><th class='nowrap'>When</th><th>Who</th><th>Change</th><th>Version</th><th></th></tr></thead><tbody>" +
+      (histRows || "<tr><td colspan='5' class='muted'>No saves yet.</td></tr>") + "</tbody></table></div>" +
+      (history.length >= 150 ? "<p class='muted small' style='padding:0 1.1rem'>Showing the latest 150 versions.</p>" : "") + "</section>";
+
+    var q = $("#q");
+    q.addEventListener("input", function () { filter = q.value.trim().toLowerCase(); render(); var n = $("#q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); });
+    $("#refresh").addEventListener("click", load);
+    $("#backup").addEventListener("click", function () {
+      sb.from("schedule_documents").select("data,version,updated_at").eq("path", "schedule/main").maybeSingle().then(function (r) {
+        if (r.error || !r.data) return toast("Couldn't download: " + (r.error ? r.error.message : "no schedule yet"), true);
+        download("pcc-schedule-v" + r.data.version + "-" + r.data.updated_at.slice(0, 10) + ".json", JSON.stringify(r.data.data, null, 2));
+      });
+    });
+  }
+
+  document.addEventListener("change", function (ev) {
+    var sel = ev.target.closest("select[data-user]");
+    if (!sel) return;
+    var u = users.find(function (x) { return x.id === sel.dataset.user; });
+    if (u.id === me.id && sel.value !== "admin" && !confirm("Remove your own admin access? You won't be able to manage access after this.")) { sel.value = u.role; return; }
+    sel.disabled = true;
+    sb.rpc("set_user_role", { p_user: u.id, p_role: sel.value }).then(function (r) {
+      if (r.error) { toast(r.error.message, true); sel.value = u.role; sel.disabled = false; return; }
+      toast((u.full_name || u.email) + " is now " + sel.value + ".");
+      if (u.id === me.id && sel.value !== "admin") return location.replace("./");
+      load();
+    });
+  });
+
+  document.addEventListener("click", function (ev) {
+    var dl = ev.target.closest("[data-dl]");
+    if (dl) {
+      sb.from("schedule_history").select("data,version,changed_at").eq("id", dl.dataset.dl).single().then(function (r) {
+        if (r.error) return toast("Couldn't download: " + r.error.message, true);
+        download("pcc-schedule-v" + r.data.version + "-" + r.data.changed_at.slice(0, 10) + ".json", JSON.stringify(r.data.data, null, 2));
+      });
+      return;
+    }
+    var rs = ev.target.closest("[data-restore]");
+    if (rs) {
+      if (!confirm("Make version " + rs.dataset.v + " the current schedule? Everyone will see it right away. You can undo this by restoring again.")) return;
+      rs.disabled = true;
+      sb.rpc("restore_version", { p_history_id: Number(rs.dataset.restore) }).then(function (r) {
+        if (r.error) { rs.disabled = false; return toast(r.error.message, true); }
+        toast("Restored. Version " + r.data + " is now current.");
+        load();
+      });
+    }
+  });
+
+  $("#signout").addEventListener("click", function () { window.PCCAuth.signOut(); });
+
+  window.PCCAuth.ready.then(function (c) {
+    me = c.profile; sb = window.PCCAuth.client;
+    $("#who").textContent = me.full_name || me.email;
+    if (me.role !== "admin") {
+      $("#main").innerHTML = "<div class='denied'><h2>Admins only</h2><p class='muted'>You're signed in as " + esc(me.email) +
+        " with " + esc(me.role) + " access. Ask an admin if you need to manage access.</p><p><a href='./'>Back to the schedule</a></p></div>";
+      return;
+    }
+    load();
+  });
+})();
+</script>
+</body>
+</html>
