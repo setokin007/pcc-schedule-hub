@@ -15,9 +15,9 @@ The Polynesian Cultural Center's schedule of record: operating hours, activity a
 | **Editor** | Everything a Viewer can, plus change the schedule (Manage tab, Open/Close day, etc.). |
 | **Admin** | Everything an Editor can, plus give or remove access and restore earlier versions (Admin page). |
 
-**Sign-in:** staff enter their work email and type a 6-digit code that's emailed to them. A code is used instead of a clickable link because corporate mail scanners often "click" links in incoming mail to check them, which uses up one-time links before staff see them.
+**Sign-in:** staff enter their work email and click the sign-in link that's emailed to them (or type the 6-digit code, if you switch the email template to show one).
 
-**Why it's safe to let any @polynesia.com address in:** receiving the code proves the person controls that mailbox; the domain check runs inside the database (not the browser); and new accounts can only *view*. When IT disables a mailbox, that person can no longer get codes.
+**Why it's safe to let any @polynesia.com address in:** receiving the email proves the person controls that mailbox; the domain check runs inside the database (not the browser); and new accounts can only *view*. When IT disables a mailbox, that person can no longer get sign-in emails.
 
 **No silent overwrites:** each save says which version it was based on. If someone else saved in between, the save is refused, the editor sees "Someone else saved a change just now", and the latest schedule loads automatically.
 
@@ -36,8 +36,8 @@ The Polynesian Cultural Center's schedule of record: operating hours, activity a
 ### 2. Configure sign-in (Authentication settings)
 
 1. **Authentication → Sign In / Providers → Email:** Email enabled. Keep **Allow new users to sign up** ON (the database limits sign-ups to @polynesia.com). Set **Email OTP expiration** to `600` seconds and OTP length to `6`.
-2. **Authentication → Emails → SMTP Settings: set up custom SMTP. This is required.** Supabase's built-in mailer is for testing only (it sends only to your project's team members, a few emails per hour). Use any of: your Microsoft 365 mail relay, Resend, SendGrid, Postmark or Amazon SES. Use a sender like `schedule@polynesia.com`, and ask IT to add the provider's SPF/DKIM records and allow-list the sender so codes don't land in Quarantine.
-3. **Authentication → Emails → Templates:** edit **Magic Link** *and* **Confirm signup** so they show the code instead of a link (first-time users get "Confirm signup", returning users get "Magic Link"):
+2. **Authentication → Emails → SMTP Settings: set up custom SMTP before other staff sign in.** Supabase's built-in mailer is for testing only (it sends only to members of your Supabase organization, a few emails per hour). No PCC systems are needed: a project Gmail account works (turn on 2-Step Verification, create an app password, then host `smtp.gmail.com`, port `465`, the Gmail address as username, the app password as password), as do Resend, Brevo, SendGrid or Postmark with a domain of your own. Test by signing in with two or three colleagues' addresses; if emails land in Junk or Quarantine, ask IT to allow-list the sender.
+3. **Sign-in emails.** Out of the box, Supabase sends its default "Your sign-in link" email and the site accepts that link. Supabase only lets you edit email templates after custom SMTP is set up. Once it is, you can switch **Magic Link** and **Confirm signup** to show a code instead (sturdier if PCC's mail scanner ever starts "clicking" links); the site accepts codes too:
 
    Subject: `Your PCC Schedule Hub sign-in code`
 
@@ -64,7 +64,7 @@ The Polynesian Cultural Center's schedule of record: operating hours, activity a
 
 ### 4. Make yourself the first admin
 
-1. Open the site and sign in with your @polynesia.com address. You'll be a Viewer.
+1. Open the site and sign in with your @polynesia.com address. You'll be a Viewer. (Until custom SMTP is set up, Supabase only emails members of your Supabase organization, so invite your PCC address under **Organization settings → Team** first.)
 2. In Supabase **SQL Editor**, run (with your address):
    ```sql
    update public.profiles set role = 'admin' where email = 'you@polynesia.com';

@@ -1,9 +1,10 @@
 /*
  * auth.js — staff sign-in for the PCC Schedule Hub (shared by every page).
  *
- * Staff type their @polynesia.com address, receive a 6-digit code by email,
- * and enter it here. A code (not a clickable link) is used because corporate
- * mail scanners often open links in incoming email, which uses up one-time links.
+ * Staff type their @polynesia.com address and get a sign-in email. Either the
+ * link in it signs them in (Supabase's default email), or, once custom email
+ * templates are set up, they type the 6-digit code from it here. Codes are
+ * sturdier: corporate mail scanners sometimes open links, using them up.
  *
  * Exposes window.PCCAuth:
  *   client   the Supabase client (signed in once `ready` resolves)
@@ -91,11 +92,11 @@
     mount().innerHTML = frame(
       '<h1 id="pcc-login-title">Sign in to the Schedule Hub</h1>' +
       "<p>Use your " + esc(DOMAINS.map(function (d) { return "@" + d; }).join(" or ")) +
-      " email. We'll send you a 6-digit code.</p>" +
+      " email. We'll email you a sign-in link.</p>" +
       (message ? '<div class="pl-msg ' + (isError ? "err" : "ok") + '" role="status">' + esc(message) + "</div>" : "") +
       '<form novalidate><label>Work email<input type="email" name="email" autocomplete="email" inputmode="email" required ' +
       'placeholder="name@' + esc(DOMAINS[0]) + '" value="' + esc(prefill || "") + '"></label>' +
-      '<button class="pl-go" type="submit">Send code</button></form>' +
+      '<button class="pl-go" type="submit">Email me a sign-in link</button></form>' +
       '<p class="pl-fine">Staff only. New accounts can view the schedule; an admin gives editing access.</p>'
     );
     var form = root.querySelector("form");
@@ -113,13 +114,13 @@
 
   function sendCode(email, btn) {
     if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
-    return client.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } }).then(function (res) {
+    return client.auth.signInWithOtp({ email: email, options: otpOptions() }).then(function (res) {
       if (res.error) {
         var m = String(res.error.message || "");
         var status = res.error.status;
         if (/database error|only @/i.test(m)) return showEmail("That email can't sign in here. Use your work address.", true, email);
         if (status === 429 || /rate|seconds/i.test(m)) return showEmail("Too many attempts. Please wait a minute and try again.", true, email);
-        return showEmail("Couldn't send the code: " + m, true, email);
+        return showEmail("Couldn't send the sign-in email: " + m, true, email);
       }
       showCode(email);
     }, function () {
@@ -131,13 +132,14 @@
   function showCode(email, message, isError) {
     mount().innerHTML = frame(
       '<h1 id="pcc-login-title">Check your email</h1>' +
-      "<p>We sent a code to <b>" + esc(email) + "</b>. It expires in a few minutes.</p>" +
+      "<p>We sent a sign-in email to <b>" + esc(email) + "</b>. Click <b>Sign in</b> in that email and you'll be signed in " +
+      "(on this device it can open in a new tab; this page will follow along).</p>" +
       (message ? '<div class="pl-msg ' + (isError ? "err" : "ok") + '" role="status">' + esc(message) + "</div>" : "") +
-      '<form novalidate><label>Code<input class="pl-code" name="code" inputmode="numeric" autocomplete="one-time-code" ' +
+      '<form novalidate><label>Email shows a 6-digit code instead? Enter it here<input class="pl-code" name="code" inputmode="numeric" autocomplete="one-time-code" ' +
       'pattern="[0-9]*" maxlength="10" required></label>' +
       '<button class="pl-go" type="submit">Sign in</button></form>' +
       '<div class="pl-row"><button class="pl-link" type="button" data-a="back">Use a different email</button>' +
-      '<button class="pl-link" type="button" data-a="resend" disabled>Resend code</button></div>' +
+      '<button class="pl-link" type="button" data-a="resend" disabled>Resend email</button></div>' +
       '<p class="pl-fine">Not in your inbox? Check Junk or Quarantine, or ask IT to allow mail from the sign-in sender.</p>'
     );
     var form = root.querySelector("form");
@@ -149,16 +151,16 @@
     var timer = setInterval(function () {
       left -= 1;
       if (!root || !resend.isConnected) return clearInterval(timer);
-      if (left <= 0) { clearInterval(timer); resend.disabled = false; resend.textContent = "Resend code"; }
-      else resend.textContent = "Resend code (" + left + "s)";
+      if (left <= 0) { clearInterval(timer); resend.disabled = false; resend.textContent = "Resend email"; }
+      else resend.textContent = "Resend email (" + left + "s)";
     }, 1000);
-    resend.textContent = "Resend code (" + left + "s)";
+    resend.textContent = "Resend email (" + left + "s)";
 
     root.querySelector('[data-a="back"]').addEventListener("click", function () { clearInterval(timer); showEmail("", false, email); });
     resend.addEventListener("click", function () {
       clearInterval(timer);
-      client.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } }).then(function (res) {
-        showCode(email, res.error ? "Couldn't resend: " + res.error.message : "A new code is on its way.", !!res.error);
+      client.auth.signInWithOtp({ email: email, options: otpOptions() }).then(function (res) {
+        showCode(email, res.error ? "Couldn't resend: " + res.error.message : "A new sign-in email is on its way.", !!res.error);
       });
     });
     input.addEventListener("input", function () {
@@ -167,14 +169,14 @@
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var token = input.value.trim();
-      if (token.length < 6) return showCode(email, "Enter the code from the email.", true);
+      if (token.length < 6) return showCode(email, "Enter the 6-digit code from the email, or click the link in it.", true);
       var btn = form.querySelector("button");
       btn.disabled = true; btn.textContent = "Signing in…";
       client.auth.verifyOtp({ email: email, token: token, type: "email" }).then(function (res) {
         if (res.error) {
           var m = String(res.error.message || "");
           if (res.error.status === 429) return showCode(email, "Too many attempts. Wait a minute, then try again.", true);
-          return showCode(email, /expired|invalid/i.test(m) ? "That code didn't work or has expired. Try again or resend." : m, true);
+          return showCode(email, /expired|invalid/i.test(m) ? "That code didn't work or has expired. Try again or resend the email." : m, true);
         }
         clearInterval(timer);
         finish(res.data.session);
@@ -194,8 +196,12 @@
     });
   }
 
+  var finishing = false;
   function finish(session) {
+    if (finishing || isReady) return Promise.resolve();
+    finishing = true;
     return loadProfile().then(function (profile) {
+      finishing = false;
       if (!profile) {
         return client.auth.signOut().then(function () {
           showEmail("Your account isn't set up for the Schedule Hub. Ask an admin for help.", true);
@@ -205,6 +211,7 @@
       isReady = true;
       resolveReady({ session: session, profile: profile });
     }, function (err) {
+      finishing = false;
       if (err && err.expired) {
         return client.auth.signOut().then(function () { showEmail("Your session expired. Please sign in again.", false); });
       }
@@ -217,25 +224,58 @@
   }
 
   // ---------- start ----------
+  // Where the sign-in link in the email should bring people back to.
+  function otpOptions() {
+    return { shouldCreateUser: true, emailRedirectTo: location.origin + "/" };
+  }
+
+  // A link that failed (expired, already used) comes back as #error=…&error_description=…
+  function linkErrorFromUrl() {
+    var h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+    var q = new URLSearchParams(location.search || "");
+    var code = h.get("error_code") || q.get("error_code") || h.get("error") || q.get("error");
+    if (!code) return null;
+    if (/expired|otp_expired/i.test(code + " " + (h.get("error_description") || "")))
+      return "That sign-in link has expired or was already used. Send yourself a new one.";
+    return "That sign-in link didn't work (" + (h.get("error_description") || code).replace(/\+/g, " ") + "). Send yourself a new one.";
+  }
+  function cleanUrl() {
+    if (location.href.indexOf("#") !== -1 || /[?&](error|code)=/.test(location.search)) {
+      try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    }
+  }
+
   var client = null;
   function start() {
     if (!window.supabase || !window.supabase.createClient) return showFatal("The sign-in library didn't load. Reload the page.");
     if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return showFatal("This site isn't configured yet (missing SUPABASE_URL / SUPABASE_ANON_KEY).");
     client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" },
     });
     window.PCCAuth.client = client;
 
-    client.auth.onAuthStateChange(function (event) {
+    var linkError = linkErrorFromUrl();
+
+    client.auth.onAuthStateChange(function (event, session) {
       // Signed out in another tab, or the session could not be refreshed.
       if (event === "SIGNED_OUT" && isReady) location.reload();
+      // Signed in by the email link (here or in another tab of this browser).
+      if (event === "SIGNED_IN" && session && !isReady && started) setTimeout(function () { finish(session); }, 0);
+    });
+    // Another tab finished signing in: pick up its session.
+    window.addEventListener("storage", function (ev) {
+      if (isReady || !ev.key || ev.key.indexOf("auth-token") === -1 || !ev.newValue) return;
+      client.auth.getSession().then(function (res) { if (res.data && res.data.session) finish(res.data.session); });
     });
 
+    var started = false;
     client.auth.getSession().then(function (res) {
+      started = true;
+      cleanUrl();
       var session = res.data && res.data.session;
       if (session) finish(session);
-      else showEmail();
-    }, function () { showEmail(); });
+      else showEmail(linkError, !!linkError);
+    }, function () { started = true; cleanUrl(); showEmail(linkError, !!linkError); });
   }
 
   window.PCCAuth = { client: null, ready: ready, signOut: signOut, emailAllowed: emailAllowed };
